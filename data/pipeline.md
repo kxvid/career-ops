@@ -1,0 +1,178 @@
+# Pipeline -- Pending URLs
+
+Paste a URL here and I'll evaluate it.
+
+
+## Pendientes
+
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4502508008 | Anthropic | Application Security Engineer
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5156057008 | Anthropic | Data Engineer, Safeguards
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5186669008 | Anthropic | Finance Systems Engineer, Revenue
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5012991008 | Anthropic | Forward Deployed Engineer
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4985877008 | Anthropic | Forward Deployed Engineer, Applied AI
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5079562008 | Anthropic | Forward Deployed Engineer, Federal Civilian
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4980335008 | Anthropic | GRC Engineering Manager
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5064817008 | Anthropic | Head of Solutions Architects, Applied AI (Korea)
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5030680008 | Anthropic | Infrastructure Engineer, Sandboxing
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4887952008 | Anthropic | IT Systems Engineer, Corporate Systems & Infrastructure
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5161882008 | Anthropic | IT Systems Engineer, Enterprise SaaS
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5193986008 | Anthropic | Lead, Data Center Physical Security Operations (North America)
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4952079008 | Anthropic | Machine Learning Systems Engineer, Research Tools
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4952051008 | Anthropic | Machine Learning Systems Engineer, RL Engineering
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5099753008 | Anthropic | Manager, Forward Deployed Engineering
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5183983008 | Anthropic | Manager of Forward Deployed Engineering
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4964610008 | Anthropic | Manager of Solutions Architecture, Applied AI (Industries)
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4778843008 | Anthropic | ML Infrastructure Engineer, Safeguards
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4950664008 | Anthropic | Partner Solutions Architect, Applied AI
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5025624008 | Anthropic | Research Engineer, Cybersecurity Reinforcement Learning
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4982193008 | Anthropic | Security Engineer, Detection & Response
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5135098008 | Anthropic | Security Engineer Lead, Corporate Security
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5105509008 | Anthropic | Security Engineer, Offensive Security
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5195705008 | Anthropic | Security Engineer - Threat Intel
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/4887959008 | Anthropic | Senior Software Security Engineer
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5063007008 | Anthropic | Software Engineer, Cybersecurity Products
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5126080008 | Anthropic | Solutions Architect, National Security
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5120512008 | Anthropic | Staff+ Software Security Engineer
+- [ ] https://job-boards.greenhouse.io/anthropic/jobs/5123769008 | Anthropic | Technical Program Manager, Security (Coordinated Vulnerability Disclosure)
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7525971?gh_jid=7525971 | Cloudflare | Application Performance and Security Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7817923?gh_jid=7817923 | Cloudflare | Associate Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7504381?gh_jid=7504381 | Cloudflare | Customer Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7610334?gh_jid=7610334 | Cloudflare | Customer Solutions Engineer 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7667911?gh_jid=7667911 | Cloudflare | Customer Solutions Engineer, ANZ
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7495512?gh_jid=7495512 | Cloudflare | Customer Solutions Engineer - Mandarin or Cantonese Speaking
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7736431?gh_jid=7736431 | Cloudflare | Data Center Infrastructure Management (DCIM) Administrator - Infrastructure Operations
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7591836?gh_jid=7591836 | Cloudflare | Digital Customer Solutions Engineer (AMER)
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7591808?gh_jid=7591808 | Cloudflare | Digital Customer Solutions Engineer (APAC/EMEA)
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7547171?gh_jid=7547171 | Cloudflare | Director, Partner Solutions Engineering EMEA
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/4886734?gh_jid=4886734 | Cloudflare | Distributed Systems Engineer - Data Platform - Analytical Database Platform
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7340474?gh_jid=7340474 | Cloudflare | Distributed Systems Engineer - Data Platform - Analytics and Alerts
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7267602?gh_jid=7267602 | Cloudflare | Distributed Systems Engineer - Data Platform (Delivery, Database, Retrieval)
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7340469?gh_jid=7340469 | Cloudflare | Distributed Systems Engineer - Data Platform - Logs and Audit Logs
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7591913?gh_jid=7591913 | Cloudflare | Escalation Engineer, Zero Trust
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6660802?gh_jid=6660802 | Cloudflare | Field Solutions Engineer 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7778849?gh_jid=7778849 | Cloudflare | Forward Deployed Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7483707?gh_jid=7483707 | Cloudflare | IAM Security Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7767865?gh_jid=7767865 | Cloudflare | Manager, Solutions Engineering (iGaming & Web3)
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7210482?gh_jid=7210482 | Cloudflare | Partner Solutions Engineer, UK&I
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7404591?gh_jid=7404591 | Cloudflare | Principal Billing Systems Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7559916?gh_jid=7559916 | Cloudflare | Principal Customer Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7814877?gh_jid=7814877 | Cloudflare | Principal Solutions Architect
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7488760?gh_jid=7488760 | Cloudflare | Principal Systems Engineer, Data
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7267426?gh_jid=7267426 | Cloudflare | Principal Systems Engineer, FL
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7267394?gh_jid=7267394 | Cloudflare | Principal Systems Engineer, IPC
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7677798?gh_jid=7677798 | Cloudflare | Senior Customer Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6393993?gh_jid=6393993 | Cloudflare | Senior Majors Accounts Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7378442?gh_jid=7378442 | Cloudflare | Senior Majors Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7469508?gh_jid=7469508 | Cloudflare | Senior Manager, Solutions Architecture, AI & Developer Platform
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7493333?gh_jid=7493333 | Cloudflare | Senior Manager, Solutions Engineering
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7439830?gh_jid=7439830 | Cloudflare | Senior Manager, Solutions Engineering Northern Europe
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7761342?gh_jid=7761342 | Cloudflare | Senior Manager, Solutions Engineering UKI 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6539277?gh_jid=6539277 | Cloudflare | Senior Named Solutions Engineer, Public Sector   
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7515882?gh_jid=7515882 | Cloudflare | Senior Named Solutions Engineer, UKI
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7609741?gh_jid=7609741 | Cloudflare | Senior OCI and Fusion Administrator
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7582021?gh_jid=7582021 | Cloudflare | Senior Partner Solutions Engineer, SAARC (India)
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6297179?gh_jid=6297179 | Cloudflare | Senior/Principal Systems Engineer, Workers AI (AI/ML)
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7006419?gh_jid=7006419 | Cloudflare | Senior Product Marketing Manager, Cybersecurity
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7533356?gh_jid=7533356 | Cloudflare | Senior Professional Services Devops Manager
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7821913?gh_jid=7821913 | Cloudflare | Senior Security Engineer - Security Technology Delivery
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6991269?gh_jid=6991269 | Cloudflare | Senior Solutions Architect
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7505995?gh_jid=7505995 | Cloudflare | Senior Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7767766?gh_jid=7767766 | Cloudflare | Senior Solutions Engineer 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7778747?gh_jid=7778747 | Cloudflare | Senior Solutions Engineer - Calgary
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7714390?gh_jid=7714390 | Cloudflare | Senior Solutions Engineer, Commercial Accounts - Montreal, QC
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7662538?gh_jid=7662538 | Cloudflare | Senior Solutions Engineer, Digital Native
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7380486?gh_jid=7380486 | Cloudflare | Senior Solutions Engineer, Digital Native Business
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7518684?gh_jid=7518684 | Cloudflare | Senior Solutions Engineer - Digital Native Enterprise - West
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7601630?gh_jid=7601630 | Cloudflare | Senior Solutions Engineer - Egypt, Kuwait & Bahrain
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7782508?gh_jid=7782508 | Cloudflare | Senior Solutions Engineer, Enterprise Accounts - Charlotte or Raleigh, NC
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7778956?gh_jid=7778956 | Cloudflare | Senior Solutions Engineer, Enterprise Accounts - Miami
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7518699?gh_jid=7518699 | Cloudflare | Senior Solutions Engineer, Enterprise Accounts - NYC
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7528276?gh_jid=7528276 | Cloudflare | Senior Solutions Engineering Manager, West
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7374554?gh_jid=7374554 | Cloudflare | Senior Solutions Engineer, Majors
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7812112?gh_jid=7812112 | Cloudflare | Senior Solutions Engineer, Majors - Chicago, IL
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7655747?gh_jid=7655747 | Cloudflare | Senior Solutions Engineer, Majors - Kansas City, MO or St. Louis, MO
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7520051?gh_jid=7520051 | Cloudflare | Senior Solutions Engineer, Majors, Philadelphia or Pittsburgh 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7551589?gh_jid=7551589 | Cloudflare | Senior Solutions Engineer, Majors, San Francisco
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7618422?gh_jid=7618422 | Cloudflare | Senior Solutions Engineer, Majors - Tampa
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7406531?gh_jid=7406531 | Cloudflare | Senior Solutions Engineer - Mid-Market
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7799134?gh_jid=7799134 | Cloudflare | Senior Solutions Engineer - Mid-Market - Austin
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7558268?gh_jid=7558268 | Cloudflare | Senior Solutions Engineer - Mid-Market - Dallas
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7786402?gh_jid=7786402 | Cloudflare | Senior Solutions Engineer - Mid-Market Tampa
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7518676?gh_jid=7518676 | Cloudflare | Senior Solutions Engineer, Named Accounts
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7826822?gh_jid=7826822 | Cloudflare | Senior Solutions Engineer, Named Accounts - San Francisco
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7518670?gh_jid=7518670 | Cloudflare | Senior Solutions Engineer - New England
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7530475?gh_jid=7530475 | Cloudflare | Senior Solutions Engineer, Public Sector Federal
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7526134?gh_jid=7526134 | Cloudflare | Senior Solutions Engineer, Russian Speaker 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7275868?gh_jid=7275868 | Cloudflare | Senior Solutions Engineer - Russian Speaking
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7765245?gh_jid=7765245 | Cloudflare | Senior Solutions Engineer, Shanghai
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7530553?gh_jid=7530553 | Cloudflare | Senior Solutions Engineer, SLED
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7526029?gh_jid=7526029 | Cloudflare | Senior Solutions Engineer, Ukrainian speaker
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7261894?gh_jid=7261894 | Cloudflare | Senior Specialist Solutions Engineer, Zero Trust - Japan
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7593597?gh_jid=7593597 | Cloudflare | Senior Strategic Solutions Engineer, Bengaluru
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7767908?gh_jid=7767908 | Cloudflare | Senior Strategic Solutions Engineer, Delhi NCR
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7606636?gh_jid=7606636 | Cloudflare | Senior Systems Engineer, Cloud App Control
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7090955?gh_jid=7090955 | Cloudflare | Senior Systems Engineer, Cloudflare Data Platform
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7068271?gh_jid=7068271 | Cloudflare | Senior Systems Engineer, Edge
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7764827?gh_jid=7764827 | Cloudflare | Senior Systems Engineer, Workers AI
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6621615?gh_jid=6621615 | Cloudflare | Software Engineer, Identity Access Management
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7505582?gh_jid=7505582 | Cloudflare | Solutions Architect, AI/Cloudflare Developer Platform 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7242551?gh_jid=7242551 | Cloudflare | Solutions Engineer
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7593565?gh_jid=7593565 | Cloudflare | Solutions Engineer 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7742347?gh_jid=7742347 | Cloudflare | Solutions Engineer, Benelux
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7831414?gh_jid=7831414 | Cloudflare | Solutions Engineer, Central & Eastern Europe - Czech Speaking
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7520215?gh_jid=7520215 | Cloudflare | Solutions Engineering Manager, Commercial -  West
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7610071?gh_jid=7610071 | Cloudflare | Solutions Engineer, Nordics
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7527453?gh_jid=7527453 | Cloudflare | Systems Engineer, Data
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7742773?gh_jid=7742773 | Cloudflare | Systems Engineer, MAPS
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6673579?gh_jid=6673579 | Cloudflare | Systems Engineer, Metrics and Alerting
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7542754?gh_jid=7542754 | Cloudflare | Systems Engineer, SSL/TLS Team
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7104011?gh_jid=7104011 | Cloudflare | Systems Engineer, Workers Authoring and Testing
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7090232?gh_jid=7090232 | Cloudflare | Systems Test Engineer - Zero Trust Client
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6874151?gh_jid=6874151 | Cloudflare | Threat Advisory Engineer, Solutions Engineering
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/6934200?gh_jid=6934200 | Cloudflare | Virtual Solutions Engineer, Lisbon 
+- [ ] https://boards.greenhouse.io/cloudflare/jobs/7579269?gh_jid=7579269 | Cloudflare | Vulnerability Management Engineer
+- [ ] https://job-boards.greenhouse.io/vannevarlabs/jobs/5106734007 | Vannevar Labs | DevOps Engineer
+- [ ] https://job-boards.greenhouse.io/vannevarlabs/jobs/4172631007 | Vannevar Labs | Forward Deployed Engineer - TS/SCI Clearance Required
+- [ ] https://job-boards.greenhouse.io/vannevarlabs/jobs/5082044007 | Vannevar Labs | Forward Deployed Engineer - TS/SCI Clearance Required (Oahu)
+- [ ] https://job-boards.greenhouse.io/vannevarlabs/jobs/5045937007 | Vannevar Labs | InfoSec Engineer - Compliance (ATO)
+- [ ] https://jobs.lever.co/palantir/a543d82a-a089-4b1c-afd1-4f30d3d8ee23 | Palantir | Administrative Business Partner
+- [ ] https://jobs.lever.co/palantir/a63092fa-64c0-4c09-b827-bb23a98cb207 | Palantir | Administrative Business Partner - Security
+- [ ] https://jobs.lever.co/palantir/205c3184-4272-41a9-a1e2-5352d4d00910 | Palantir | Application Security Engineer
+- [ ] https://jobs.lever.co/palantir/6fa1ad9b-4506-45e4-a476-f4292911a279 | Palantir | Compliance Engineer
+- [ ] https://jobs.lever.co/palantir/fa93a1f8-dc95-40d0-b5ca-f2aebaab0806 | Palantir | Deployment Strategist - Japan Forward Deployed
+- [ ] https://jobs.lever.co/palantir/1a53939d-8ffa-4570-b31a-6d0bc53fdb59 | Palantir | Deployment Strategist - Korea Forward Deployed
+- [ ] https://jobs.lever.co/palantir/51ea4a3b-7764-4c87-96e4-310e19c856d5 | Palantir | DevOps Engineer
+- [ ] https://jobs.lever.co/palantir/636fc05c-d348-4a06-be51-597cb9e07488 | Palantir | Forward Deployed AI Engineer
+- [ ] https://jobs.lever.co/palantir/00c2c97b-8514-4617-9883-e53e486b6dcd | Palantir | Forward Deployed Enablement Engineer - Customer Success
+- [ ] https://jobs.lever.co/palantir/96a0ce26-cf84-4fa8-934b-acc4363620b2 | Palantir | Forward Deployed Engineer - Mixed Reality
+- [ ] https://jobs.lever.co/palantir/72e51928-07f0-4be0-aae5-0ae6956a4846 | Palantir | Forward Deployed Infrastructure Engineer - UK Government
+- [ ] https://jobs.lever.co/palantir/74748e0e-a0bc-4c53-a636-ef14e36d9b5e | Palantir | Forward Deployed Infrastructure Engineer - US Government
+- [ ] https://jobs.lever.co/palantir/5a99fe16-1bda-4313-ace2-a11ea6e58f0c | Palantir | Forward Deployed Reliability Engineer
+- [ ] https://jobs.lever.co/palantir/22053072-4c22-49c4-8299-28e107ceeb98 | Palantir | Forward Deployed Security Engineer - US Government
+- [ ] https://jobs.lever.co/palantir/06c7bd36-e24b-4f3a-8b45-1e846ae44095 | Palantir | Forward Deployed Software Engineer
+- [ ] https://jobs.lever.co/palantir/27bf5707-96fa-460e-8a5b-53bc192ca87b | Palantir | Forward Deployed Software Engineer  - Edge Autonomous Systems
+- [ ] https://jobs.lever.co/palantir/8f15d728-99cc-4003-9add-928bd72a7f30 | Palantir | Forward Deployed Software Engineer - AUS Government
+- [ ] https://jobs.lever.co/palantir/0edf7365-49f0-4263-818a-19409ec4f430 | Palantir | Forward Deployed Software Engineer - Autonomous Systems C2
+- [ ] https://jobs.lever.co/palantir/215bfcd6-c929-45ae-a11b-3fa59ed78025 | Palantir | Forward Deployed Software Engineer - France Government
+- [ ] https://jobs.lever.co/palantir/34b3a697-6e22-4751-befd-0b7921abbd5f | Palantir | Forward Deployed Software Engineer - Intel
+- [ ] https://jobs.lever.co/palantir/8aba5995-653d-4805-96e8-24488e6abf37 | Palantir | Forward Deployed Software Engineer - Japan Forward Deployed
+- [ ] https://jobs.lever.co/palantir/12e94938-55cb-4ad9-9c05-405ebc9ef430 | Palantir | Forward Deployed Software Engineer - Japan Government
+- [ ] https://jobs.lever.co/palantir/a39bf84c-6648-4871-bd07-9b882d401c4c | Palantir | Forward Deployed Software Engineer - Korea Forward Deployed
+- [ ] https://jobs.lever.co/palantir/3d0d9d92-0321-4459-a17d-fa1a76636a43 | Palantir | Forward Deployed Software Engineer - Tactical Edge
+- [ ] https://jobs.lever.co/palantir/57a3f928-e7d3-4037-8196-b38e2f867152 | Palantir | Forward Deployed Software Engineer - UK Government
+- [ ] https://jobs.lever.co/palantir/289ad049-7b4e-41e3-8a39-146fbeb6fb64 | Palantir | Forward Deployed Software Engineer - US Government
+- [ ] https://jobs.lever.co/palantir/13f99633-43b5-4459-8e84-25073f257c18 | Palantir | Forward Deployed Software Engineer - Warp Speed
+- [ ] https://jobs.lever.co/palantir/b4aa51a2-bc43-4d67-bf55-12db7feefb3a | Palantir | Forward Deployed Software Engineer, New Grad - UK Government
+- [ ] https://jobs.lever.co/palantir/1124402c-2088-40c6-b6aa-b9ef7777519b | Palantir | Information Security Engineer
+- [ ] https://jobs.lever.co/palantir/3c788579-eec7-4897-b446-4afc944e79be | Palantir | Information Security Engineer - DLP
+- [ ] https://jobs.lever.co/palantir/1e77a5e8-9843-4516-a186-7c24f0ff07a0 | Palantir | Information Security Engineer - Endpoint
+- [ ] https://jobs.lever.co/palantir/2127f3af-1fb3-4aa3-9aa1-eb06967e0166 | Palantir | Information Security Engineer - Insider Risk
+- [ ] https://jobs.lever.co/palantir/caeb42e8-5d44-4114-a912-0de2584d1a75 | Palantir | Information Systems Security Engineer
+- [ ] https://jobs.lever.co/palantir/666d13c7-c6f0-43fb-a0ab-091c338085dc | Palantir | Platform Engineer - Identity and Access Management (IAM)
+- [ ] https://jobs.lever.co/palantir/0f077970-31ad-45b4-ae76-458a134b705f | Palantir | Product Infrastructure Security Engineer
+- [ ] https://jobs.lever.co/palantir/211f99dc-269e-4f25-84d3-d73dea782080 | Palantir | Site Reliability Engineer - US Government
+- [ ] https://jobs.lever.co/palantir/5174e95b-2e0a-46f8-8db7-e2c837a0ac94 | Palantir | Site Reliability Operations Analyst - Commercial
+- [ ] https://jobs.lever.co/palantir/98bbe55b-f591-4272-a486-d82404d2c576 | Palantir | Site Reliability Operations Analyst - UK Government
+- [ ] https://jobs.lever.co/palantir/38758e88-5884-4a11-98ac-d23cab51bc7a | Palantir | Site Reliability Operations Analyst - US Government
+- [ ] https://jobs.lever.co/palantir/1ec0ff9f-3d9d-43bc-8aa0-005a887513d0 | Palantir | Systems Engineer - Business Systems
+

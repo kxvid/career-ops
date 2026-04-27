@@ -30,6 +30,7 @@ modes/_profile.md
 .resolved-prompt-*
 node_modules/
 bun.lock
+.vercel/
 
 # OS
 .DS_Store
