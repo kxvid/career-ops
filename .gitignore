@@ -25,6 +25,8 @@ modes/_profile.md
 
 # Secrets (never commit — use .env.example as template)
 .env
+credentials.json
+data/gmail-events.tsv
 
 # Generated
 .resolved-prompt-*

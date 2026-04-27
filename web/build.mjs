@@ -24,6 +24,8 @@ const applicationsMd = readOpt('data/applications.md');
 const pipelineMd = readOpt('data/pipeline.md');
 const scanHistoryTsv = readOpt('data/scan-history.tsv');
 const profileMd = readOpt('modes/_profile.md');
+const gmailStateJson = readOpt('data/gmail-state.json');
+const gmailEventsTsv = readOpt('data/gmail-events.tsv');
 
 const profile = profileYml ? yaml.load(profileYml) : {};
 
@@ -85,6 +87,23 @@ for (const item of pipeline) {
   }
 }
 
+// -- Gmail state + recent events --
+let gmailState = null;
+try { gmailState = gmailStateJson ? JSON.parse(gmailStateJson) : null; } catch { gmailState = null; }
+
+function parseGmailEvents(tsv) {
+  const lines = tsv.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split('\t');
+  return lines.slice(1).map(l => {
+    const cells = l.split('\t');
+    const o = {};
+    headers.forEach((h, i) => { o[h] = cells[i] || ''; });
+    return o;
+  }).reverse(); // newest first
+}
+const gmailEvents = parseGmailEvents(gmailEventsTsv);
+
 // -- Reports list --
 let reports = [];
 const reportsDir = path.join(root, 'reports');
@@ -103,6 +122,8 @@ const data = {
   applications,
   pipeline,
   reports,
+  gmailState,
+  gmailEvents: gmailEvents.slice(0, 50),
   builtAt: new Date().toISOString(),
 };
 
@@ -158,6 +179,7 @@ const html = `<!doctype html>
     <button data-tab="cv" class="tab px-4 py-2 rounded-md text-sm font-medium">CV</button>
     <button data-tab="profile" class="tab px-4 py-2 rounded-md text-sm font-medium">Profile</button>
     <button data-tab="reports" class="tab px-4 py-2 rounded-md text-sm font-medium">Reports <span id="rp-count" class="ml-1 text-xs opacity-75"></span></button>
+    <button data-tab="gmail" class="tab px-4 py-2 rounded-md text-sm font-medium">Gmail <span id="gm-count" class="ml-1 text-xs opacity-75"></span></button>
   </nav>
 
   <main>
@@ -250,6 +272,28 @@ const html = `<!doctype html>
         <p id="rp-empty" class="text-sm text-gray-500 hidden">No reports yet.</p>
       </div>
     </section>
+
+    <!-- Gmail -->
+    <section data-section="gmail" class="hidden">
+      <div class="bg-white rounded-lg shadow-sm p-5 mb-4" id="gm-state"></div>
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 text-left">
+            <tr>
+              <th class="px-3 py-2">When</th>
+              <th class="px-3 py-2">Company</th>
+              <th class="px-3 py-2">Detected</th>
+              <th class="px-3 py-2">Status change</th>
+              <th class="px-3 py-2">Subject</th>
+            </tr>
+          </thead>
+          <tbody id="gm-rows"></tbody>
+        </table>
+        <p id="gm-empty" class="text-sm text-gray-500 py-8 text-center hidden">
+          No Gmail events yet. Run <code class="bg-gray-100 px-1">node gmail-sync.mjs</code> after running setup. See <a class="underline" href="https://github.com/kxvid/career-ops/blob/claude/job-application-tracker-M3nL4/GMAIL_SETUP.md" target="_blank">GMAIL_SETUP.md</a>.
+        </p>
+      </div>
+    </section>
   </main>
 
   <footer class="text-center text-xs text-gray-400 mt-10 mb-4">
@@ -272,6 +316,7 @@ document.getElementById('hdr-built').textContent = new Date(D.builtAt).toLocaleS
 document.getElementById('pl-count').textContent = '(' + D.pipeline.length + ')';
 document.getElementById('ap-count').textContent = '(' + D.applications.length + ')';
 document.getElementById('rp-count').textContent = '(' + D.reports.length + ')';
+document.getElementById('gm-count').textContent = '(' + D.gmailEvents.length + ')';
 
 // -- Tabs --
 const tabs = document.querySelectorAll('.tab');
@@ -414,6 +459,41 @@ if (D.reports.length === 0) {
     \`<li class="py-2 flex justify-between"><span class="font-mono text-sm">\${esc(r.name)}</span><a class="text-blue-600 underline" href="../\${esc(r.path)}" target="_blank">view ↗</a></li>\`
   ).join('');
 }
+
+// -- Gmail state + events --
+function renderGmail() {
+  const stateEl = document.getElementById('gm-state');
+  if (!D.gmailState) {
+    stateEl.innerHTML = '<p class="text-sm text-gray-600">No sync run yet. After OAuth setup, run <code class="bg-gray-100 px-1">node gmail-sync.mjs --dry-run</code>. See <a class="underline" href="https://github.com/kxvid/career-ops/blob/claude/job-application-tracker-M3nL4/GMAIL_SETUP.md" target="_blank">GMAIL_SETUP.md</a>.</p>';
+  } else {
+    const s = D.gmailState;
+    const last = s.last_run ? new Date(s.last_run).toLocaleString() : '—';
+    stateEl.innerHTML = \`
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div><div class="text-xs text-gray-500 uppercase">Last sync</div><div class="font-medium">\${esc(last)}</div></div>
+        <div><div class="text-xs text-gray-500 uppercase">Window</div><div class="font-medium">\${esc(s.last_query_date || '—')}</div></div>
+        <div><div class="text-xs text-gray-500 uppercase">Processed</div><div class="font-medium">\${s.processed ?? 0}</div></div>
+        <div><div class="text-xs text-gray-500 uppercase">Updated</div><div class="font-medium">\${s.updated ?? 0}\${s.dry_run ? ' (dry-run)' : ''}</div></div>
+      </div>\`;
+  }
+  if (D.gmailEvents.length === 0) {
+    document.getElementById('gm-empty').classList.remove('hidden');
+  } else {
+    document.getElementById('gm-rows').innerHTML = D.gmailEvents.map(e => {
+      const change = e.old_status && e.new_status && e.old_status !== e.new_status
+        ? \`<span class="text-gray-500">\${esc(e.old_status)}</span> → <b>\${esc(e.new_status)}</b>\`
+        : \`<span class="text-gray-500">\${esc(e.action || '—')}</span>\`;
+      return \`<tr class="border-t hover:bg-gray-50">
+        <td class="px-3 py-2 text-xs text-gray-500">\${esc((e.ts || '').replace('T', ' ').slice(0, 16))}</td>
+        <td class="px-3 py-2">\${esc(e.company || '—')}</td>
+        <td class="px-3 py-2"><span class="pill pill-status">\${esc(e.detected || '—')}</span></td>
+        <td class="px-3 py-2">\${change}</td>
+        <td class="px-3 py-2 text-gray-600 truncate max-w-[400px]">\${esc(e.subject || '')}</td>
+      </tr>\`;
+    }).join('');
+  }
+}
+renderGmail();
 
 // Initial render
 renderOverview();

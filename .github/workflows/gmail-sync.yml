@@ -1,0 +1,57 @@
+name: Gmail Sync
+
+# Disabled by default. To enable:
+#   1. Add repo secrets: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN
+#      (Settings -> Secrets and variables -> Actions -> New repository secret)
+#   2. Uncomment the `schedule` block below.
+#   3. (Optional) Adjust the interval. Default: every 6 hours.
+#
+# This workflow:
+#   - Runs gmail-sync.mjs to update data/applications.md status from inbox.
+#   - Rebuilds web/index.html.
+#   - Commits + pushes if anything changed (Vercel auto-redeploys on push).
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 */6 * * *"   # every 6 hours
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Run Gmail sync
+        env:
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+        run: node gmail-sync.mjs
+
+      - name: Rebuild dashboard
+        run: node web/build.mjs
+
+      - name: Commit and push if changed
+        run: |
+          if [ -z "$(git status --porcelain data/ web/index.html)" ]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "career-ops-bot"
+          git config user.email "career-ops-bot@users.noreply.github.com"
+          git add -f data/applications.md data/gmail-state.json data/gmail-events.tsv web/index.html
+          git commit -m "chore(gmail): scheduled sync $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
