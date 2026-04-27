@@ -1,0 +1,116 @@
+# Career-Ops Profile Configuration -- Kov Rastogi
+# Single source of truth for personal data across all modes.
+
+candidate:
+  full_name: "Kov Rastogi"
+  email: "kovidrastogi@gmail.com"
+  phone: "+1-909-541-8931"
+  location: "Irvine, CA"
+  linkedin: "linkedin.com/in/kovrastogi"
+  portfolio_url: ""
+  github: ""
+
+target_roles:
+  primary:
+    - "IT Systems Engineer"
+    - "Infrastructure Engineer"
+    - "Cloud Engineer"
+    - "Cloud Security Engineer"
+    - "Cybersecurity Engineer"
+    - "Compliance / GRC Engineer"
+  archetypes:
+    - name: "IT Systems / Infrastructure Engineer"
+      level: "Mid"
+      fit: "primary"
+    - name: "Cloud Engineer (Azure Gov / AWS / M365)"
+      level: "Mid"
+      fit: "primary"
+    - name: "Cybersecurity / Compliance Engineer (CMMC, NIST, GRC)"
+      level: "Mid"
+      fit: "primary"
+    - name: "Identity & Access Management Engineer"
+      level: "Mid"
+      fit: "secondary"
+    - name: "DevOps / Platform Engineer"
+      level: "Mid"
+      fit: "adjacent"
+    - name: "Data / Analytics Engineer (Snowflake/SQL)"
+      level: "Mid"
+      fit: "adjacent"
+    - name: "Solutions / Customer Engineer (Technical)"
+      level: "Mid"
+      fit: "adjacent"
+
+narrative:
+  headline: "Infrastructure & security engineer for regulated environments"
+  exit_story: |
+    Currently leading CMMC Level 2 readiness and DFARS/ITAR-compliant infrastructure
+    at Airborne Systems. Looking to bring that compliance-grade rigor to a larger
+    cloud or security team -- ideally at a defense-tech, cloud, or security company
+    where zero-trust, IAM, and federal-grade controls are first-class concerns.
+  superpowers:
+    - "CMMC L2 / NIST 800-171 readiness end-to-end (policy → architecture → audit)"
+    - "Microsoft 365 GCC High + Azure Government tenant operations"
+    - "Zero-trust network and IAM (BeyondTrust, Okta, Duo, AD)"
+    - "Automation-first ops: PowerShell DSC, SCCM, RPA pipelines"
+    - "Cross-domain: utility data engineering (Snowflake/SQL/Salesforce) on top of infra/security"
+  proof_points:
+    - name: "CMMC L2 program at Airborne Systems"
+      hero_metric: "Zero-trust segmentation across 200+ defense contractor endpoints"
+    - name: "Prologis Snowflake utility warehouse"
+      hero_metric: "15% reduction in PG&E/SCE meter-transfer processing time"
+    - name: "SCE OVI Index + Dashboard"
+      hero_metric: "$47K efficiencies + $31K cost avoidance via DR scoring models"
+
+compensation:
+  target_range: "$120K-160K"
+  currency: "USD"
+  minimum: "$120K"
+  flex_band_pct: 15
+  notes: |
+    - Hard floor: $120K base. Below = SKIP unless extraordinary equity/role/company.
+    - Sweet spot: $120K-160K total comp.
+    - Lower-COL metros (TX, FL): $120K base goes further -- accept toward floor.
+    - Higher-COL metros (SF, NYC, Seattle): expect $140K+ to keep parity.
+    - Top-tier companies (FAANG, Anthropic/OpenAI/Anduril/Palantir, Series B+ AI/sec):
+      allow stretch down ~10-15% on base IF total comp (equity + bonus + signing)
+      crosses $130K-140K equivalent.
+    - No upper cap -- always evaluate higher-paying roles.
+
+location:
+  country: "United States"
+  city: "Irvine"
+  state: "CA"
+  timezone: "PT"
+  visa_status: |
+    US Lawful Permanent Resident (Green Card holder).
+    N-400 naturalization filing planned for end of June 2026;
+    expected US citizenship Q4 2026 – Q2 2027.
+    No sponsorship required, ever. Eligible for Public Trust and (typically)
+    Secret clearance now; TS/SCI eligibility unlocks at naturalization.
+  target_metros:
+    tier_1_strong_preference:
+      - "Los Angeles, CA"
+      - "Orange County, CA"
+      - "San Diego, CA"
+      - "San Francisco Bay Area, CA"
+    tier_2_priority:
+      - "Seattle, WA"
+      - "New York City, NY"
+    tier_3_acceptable:
+      - "Austin, TX"
+      - "Dallas, TX"
+      - "Houston, TX"
+      - "Miami, FL"
+      - "Tampa, FL"
+      - "Orlando, FL"
+  cola_preference: "Prefer lower-COL metros when total comp is comparable"
+  remote_policy: |
+    - Remote (US): welcome
+    - Hybrid in tier_1/tier_2: welcome
+    - Hybrid in tier_3: welcome
+    - Full on-site outside tier_1/2/3: SKIP
+    - Defense/cleared roles requiring on-site in target metros: welcome
+
+cv:
+  output_format: "html"
