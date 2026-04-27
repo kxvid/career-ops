@@ -1,0 +1,535 @@
+# Portal Scanner Configuration -- Kov Rastogi
+# Target: IT Systems / Cloud / Security / Compliance / IAM Engineer roles
+# Geo: CA (LA, OC, SD, SF) > Seattle, NYC > TX (Austin, Dallas, Houston), FL (Miami, Tampa, Orlando) > US-remote
+# Comp floor: $120K base.
+
+# -- Title filter --
+# Positive must match >=1; negative must match 0.
+
+title_filter:
+  positive:
+    # -- IT / Infra --
+    - "IT Systems Engineer"
+    - "Systems Engineer"
+    - "Infrastructure Engineer"
+    - "Site Reliability"
+    - "SRE"
+    - "Platform Engineer"
+    - "DevOps"
+    - "Sysadmin"
+    - "System Administrator"
+    - "Endpoint Engineer"
+    - "Endpoint Management"
+    - "Corporate IT"
+    - "Enterprise IT"
+    # -- Cloud --
+    - "Cloud Engineer"
+    - "Cloud Infrastructure"
+    - "Cloud Operations"
+    - "CloudOps"
+    - "Azure Engineer"
+    - "AWS Engineer"
+    - "GCP Engineer"
+    - "Solutions Architect"
+    - "Cloud Architect"
+    # -- Security / GRC / Compliance --
+    - "Security Engineer"
+    - "Cybersecurity"
+    - "Cyber Security"
+    - "Information Security"
+    - "InfoSec"
+    - "SecOps"
+    - "Security Operations"
+    - "Detection Engineer"
+    - "Compliance Engineer"
+    - "Compliance Analyst"
+    - "GRC"
+    - "Governance Risk Compliance"
+    - "Risk Engineer"
+    - "Audit Engineer"
+    - "CMMC"
+    - "NIST"
+    - "FedRAMP"
+    - "Zero Trust"
+    - "Security Architect"
+    - "Vulnerability"
+    # -- IAM --
+    - "IAM Engineer"
+    - "Identity Engineer"
+    - "Access Management"
+    - "Okta Engineer"
+    - "Identity & Access"
+    # -- Data / Analytics (adjacent) --
+    - "Data Engineer"
+    - "Analytics Engineer"
+    - "Snowflake Engineer"
+    # -- Solutions / Customer (adjacent) --
+    - "Solutions Engineer"
+    - "Customer Engineer"
+    - "Forward Deployed"
+    - "Implementation Engineer"
+    - "Technical Account Manager"
+  negative:
+    # Wrong stack / domain
+    - "iOS"
+    - "Android"
+    - "Mobile Developer"
+    - "Frontend"
+    - "Front-End"
+    - "Front End"
+    - "React Developer"
+    - "UI Engineer"
+    - "Game"
+    - "Embedded"
+    - "Firmware"
+    - "FPGA"
+    - "ASIC"
+    - "RF Engineer"
+    - "Mainframe"
+    - "COBOL"
+    - "Mechanical Engineer"
+    - "Electrical Engineer"
+    # Roles outside his current capabilities
+    - "Machine Learning Engineer"
+    - "ML Engineer"
+    - "Deep Learning"
+    - "NLP Engineer"
+    - "Research Scientist"
+    - "Applied Scientist"
+    - "Data Scientist"
+    # Junior / unpaid / sales
+    - "Intern"
+    - "Internship"
+    - "Sales Development"
+    - "SDR"
+    - "BDR"
+    - "Account Executive"
+    - "Recruiter"
+    # Admin-only roles below his level
+    - "Salesforce Admin"
+    - "SAP Basis"
+    - "SAP Admin"
+    - "Oracle DBA"
+    - "Help Desk"
+    - "Helpdesk"
+    - "Service Desk"
+    - "Desktop Support"
+    - "Tech Support"
+    # Non-target geos (catch obvious EU/Asia-only postings -- liveness check confirms)
+    - "Bangalore"
+    - "Hyderabad"
+    - "London"
+    - "Berlin"
+    - "Paris"
+    - "Amsterdam"
+    - "Singapore"
+    - "Tokyo"
+  seniority_boost:
+    - "Mid"
+    - "Senior"
+    - "II"
+    - "III"
+    - "Lead"
+
+# -- Search queries --
+# Token-cost: each query is a WebSearch. Keep tight and US-focused.
+
+search_queries:
+  - name: Greenhouse — IT/Infra/Security US
+    query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io ("IT Systems Engineer" OR "Infrastructure Engineer" OR "Cloud Engineer" OR "Security Engineer") United States'
+    enabled: true
+
+  - name: Greenhouse — Compliance/GRC US
+    query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io ("Compliance Engineer" OR "GRC" OR "CMMC" OR "FedRAMP" OR "Security Architect") United States'
+    enabled: true
+
+  - name: Greenhouse — IAM/Cloud US
+    query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io ("IAM Engineer" OR "Identity Engineer" OR "Cloud Architect" OR "Solutions Architect") United States'
+    enabled: true
+
+  - name: Ashby — IT/Infra/Security US
+    query: 'site:jobs.ashbyhq.com ("IT Engineer" OR "Infrastructure Engineer" OR "Cloud Engineer" OR "Security Engineer") United States'
+    enabled: true
+
+  - name: Ashby — Compliance/GRC US
+    query: 'site:jobs.ashbyhq.com ("Compliance" OR "GRC" OR "Security Architect" OR "FedRAMP" OR "CMMC")'
+    enabled: true
+
+  - name: Lever — IT/Cloud/Security US
+    query: 'site:jobs.lever.co ("IT Systems" OR "Cloud Engineer" OR "Security Engineer" OR "Compliance") United States'
+    enabled: true
+
+  - name: Defense Tech — Anduril/Palantir/Shield AI
+    query: '("Anduril" OR "Palantir" OR "Shield AI" OR "Saronic") ("IT" OR "Infrastructure" OR "Security" OR "Cloud" OR "Compliance" OR "IAM") site:boards.greenhouse.io OR site:jobs.ashbyhq.com OR site:jobs.lever.co'
+    enabled: true
+
+  - name: AWS / Microsoft / Google — Security & GovCloud
+    query: '("AWS GovCloud" OR "Azure Government" OR "Microsoft Federal" OR "Google Public Sector") ("Security Engineer" OR "Cloud Engineer" OR "Solutions Architect")'
+    enabled: true
+
+  - name: HN Who's Hiring — IT/Infra/Security US
+    query: 'site:news.ycombinator.com OR site:hnrss.org ("IT Systems" OR "Security Engineer" OR "Cloud Engineer" OR "Compliance Engineer") United States remote'
+    enabled: true
+
+# -- Tracked companies --
+# Direct API/career-page polls. Zero LLM cost where API is set.
+
+tracked_companies:
+
+  # -- Defense Tech (CA-heavy, strong CMMC/clearance fit) --
+
+  - name: Anduril
+    careers_url: https://job-boards.greenhouse.io/anduril
+    api: https://boards-api.greenhouse.io/v1/boards/anduril/jobs
+    notes: "Costa Mesa, CA + remote. Defense AI -- strongest CMMC/DFARS fit."
+    enabled: true
+
+  - name: Palantir
+    careers_url: https://jobs.lever.co/palantir
+    notes: "NYC, DC, Palo Alto, Seattle. Federal-heavy. FDE-style roles."
+    enabled: true
+
+  - name: Shield AI
+    careers_url: https://job-boards.greenhouse.io/shieldai
+    api: https://boards-api.greenhouse.io/v1/boards/shieldai/jobs
+    notes: "San Diego, CA. Autonomous defense systems."
+    enabled: true
+
+  - name: Saronic
+    careers_url: https://job-boards.greenhouse.io/saronic
+    api: https://boards-api.greenhouse.io/v1/boards/saronic/jobs
+    notes: "Austin, TX. Autonomous maritime defense."
+    enabled: true
+
+  - name: Vannevar Labs
+    careers_url: https://job-boards.greenhouse.io/vannevarlabs
+    api: https://boards-api.greenhouse.io/v1/boards/vannevarlabs/jobs
+    notes: "DC + remote. Defense intel."
+    enabled: true
+
+  - name: Skydio
+    careers_url: https://job-boards.greenhouse.io/skydio
+    api: https://boards-api.greenhouse.io/v1/boards/skydio/jobs
+    notes: "San Mateo, CA. Defense + enterprise drones."
+    enabled: true
+
+  - name: Rebellion Defense
+    careers_url: https://job-boards.greenhouse.io/rebelliondefense
+    api: https://boards-api.greenhouse.io/v1/boards/rebelliondefense/jobs
+    notes: "DC + LA + Seattle. Defense AI."
+    enabled: true
+
+  # -- AI labs (hire IT/security/compliance for tenant ops) --
+
+  - name: Anthropic
+    careers_url: https://job-boards.greenhouse.io/anthropic
+    api: https://boards-api.greenhouse.io/v1/boards/anthropic/jobs
+    notes: "SF + NYC + Seattle. Hires Corporate IT, Security, Compliance."
+    enabled: true
+
+  - name: OpenAI
+    careers_url: https://openai.com/careers
+    scan_method: websearch
+    scan_query: 'site:openai.com/careers ("IT" OR "Security" OR "Cloud" OR "Compliance" OR "IAM")'
+    notes: "SF + NYC. Hires IT/Security/Compliance."
+    enabled: true
+
+  - name: xAI
+    careers_url: https://x.ai/careers
+    scan_method: websearch
+    scan_query: 'site:job-boards.greenhouse.io/xai OR "xAI careers" ("IT" OR "Security" OR "Cloud")'
+    enabled: true
+
+  # -- Cloud / Security companies --
+
+  - name: CrowdStrike
+    careers_url: https://www.crowdstrike.com/careers
+    scan_method: websearch
+    scan_query: '"crowdstrike" careers ("Security Engineer" OR "Cloud" OR "IAM" OR "Compliance")'
+    notes: "Austin, TX HQ. Strong fit -- security ops product."
+    enabled: true
+
+  - name: Okta
+    careers_url: https://www.okta.com/company/careers
+    scan_method: websearch
+    scan_query: 'site:okta.com/company/careers ("Engineer" OR "Solutions" OR "IAM")'
+    notes: "SF HQ. IAM company -- direct fit."
+    enabled: true
+
+  - name: Cloudflare
+    careers_url: https://job-boards.greenhouse.io/cloudflare
+    api: https://boards-api.greenhouse.io/v1/boards/cloudflare/jobs
+    notes: "SF + Austin + remote. Zero-trust + edge."
+    enabled: true
+
+  - name: Palo Alto Networks
+    careers_url: https://jobs.paloaltonetworks.com
+    scan_method: websearch
+    scan_query: '"paloaltonetworks" careers ("Security Engineer" OR "Cloud Engineer" OR "Compliance")'
+    notes: "Santa Clara, CA HQ."
+    enabled: true
+
+  - name: Zscaler
+    careers_url: https://www.zscaler.com/careers
+    scan_method: websearch
+    scan_query: '"zscaler" careers ("Security Engineer" OR "Cloud Engineer" OR "Solutions")'
+    notes: "San Jose, CA HQ. Zero-trust SASE."
+    enabled: true
+
+  - name: Wiz
+    careers_url: https://www.wiz.io/careers
+    scan_method: websearch
+    scan_query: '"wiz.io" careers ("Engineer" OR "Solutions" OR "Compliance")'
+    notes: "NYC + remote. Cloud security -- hot hiring."
+    enabled: true
+
+  - name: SentinelOne
+    careers_url: https://job-boards.greenhouse.io/sentinelone
+    api: https://boards-api.greenhouse.io/v1/boards/sentinelone/jobs
+    notes: "Mountain View, CA. EDR."
+    enabled: true
+
+  - name: Snyk
+    careers_url: https://snyk.io/careers
+    scan_method: websearch
+    scan_query: '"snyk" careers ("Security Engineer" OR "Cloud" OR "Solutions")'
+    notes: "NYC + remote."
+    enabled: true
+
+  - name: Rubrik
+    careers_url: https://www.rubrik.com/company/careers
+    scan_method: websearch
+    scan_query: '"rubrik" careers ("Security Engineer" OR "Cloud Engineer" OR "Solutions")'
+    notes: "Palo Alto, CA. Data security."
+    enabled: true
+
+  - name: Tenable
+    careers_url: https://www.tenable.com/careers
+    scan_method: websearch
+    scan_query: '"tenable" careers ("Security Engineer" OR "Cloud" OR "Solutions")'
+    notes: "Columbia, MD + remote. VM company -- you use their tooling."
+    enabled: true
+
+  - name: Cribl
+    careers_url: https://cribl.io/careers
+    scan_method: websearch
+    scan_query: '"cribl" careers ("Security" OR "Engineer" OR "Solutions")'
+    notes: "SF + remote. Security data pipelines."
+    enabled: true
+
+  # -- Big Tech --
+
+  - name: Microsoft
+    careers_url: https://careers.microsoft.com
+    scan_method: websearch
+    scan_query: 'site:careers.microsoft.com ("Security Engineer" OR "Cloud Engineer" OR "Identity" OR "Compliance" OR "GRC") United States'
+    notes: "Seattle HQ + multi. Azure / M365 / GovCloud."
+    enabled: true
+
+  - name: Amazon / AWS
+    careers_url: https://www.amazon.jobs
+    scan_method: websearch
+    scan_query: 'site:amazon.jobs ("Security Engineer" OR "Cloud" OR "AWS GovCloud" OR "Compliance" OR "IAM") United States'
+    notes: "Seattle HQ. AWS GovCloud team is direct fit."
+    enabled: true
+
+  - name: Google
+    careers_url: https://www.google.com/about/careers
+    scan_method: websearch
+    scan_query: 'site:google.com/about/careers ("Security Engineer" OR "Cloud Engineer" OR "Public Sector" OR "Compliance") United States'
+    enabled: true
+
+  - name: Meta
+    careers_url: https://www.metacareers.com
+    scan_method: websearch
+    scan_query: 'site:metacareers.com ("Security Engineer" OR "Production Engineer" OR "Infrastructure") United States'
+    enabled: true
+
+  - name: Apple
+    careers_url: https://jobs.apple.com
+    scan_method: websearch
+    scan_query: 'site:jobs.apple.com ("Security Engineer" OR "IT Engineer" OR "Infrastructure") United States'
+    notes: "Cupertino, CA + Austin, TX."
+    enabled: true
+
+  - name: Nvidia
+    careers_url: https://www.nvidia.com/en-us/about-nvidia/careers
+    scan_method: websearch
+    scan_query: '"nvidia" careers ("Security Engineer" OR "Cloud" OR "IT") site:nvidia.com'
+    enabled: true
+
+  # -- Data / Cloud platforms --
+
+  - name: Snowflake
+    careers_url: https://careers.snowflake.com
+    scan_method: websearch
+    scan_query: '"snowflake.com/careers" ("Security Engineer" OR "Cloud Engineer" OR "Compliance" OR "Solutions") United States'
+    notes: "You already use Snowflake -- direct vendor fit."
+    enabled: true
+
+  - name: Databricks
+    careers_url: https://www.databricks.com/careers
+    scan_method: websearch
+    scan_query: '"databricks" careers ("Security Engineer" OR "Cloud Engineer" OR "Compliance" OR "Solutions Architect") United States'
+    notes: "SF + Seattle + NYC."
+    enabled: true
+
+  - name: HashiCorp
+    careers_url: https://www.hashicorp.com/careers
+    scan_method: websearch
+    scan_query: '"hashicorp" careers ("Security Engineer" OR "Cloud" OR "Solutions")'
+    notes: "Remote-first US. IBM-owned."
+    enabled: true
+
+  - name: Datadog
+    careers_url: https://careers.datadoghq.com
+    scan_method: websearch
+    scan_query: 'site:careers.datadoghq.com ("Security Engineer" OR "Cloud Engineer" OR "Solutions") United States'
+    notes: "NYC + remote."
+    enabled: true
+
+  - name: Splunk (Cisco)
+    careers_url: https://www.splunk.com/en_us/careers.html
+    scan_method: websearch
+    scan_query: '"splunk" careers ("Security Engineer" OR "Cloud" OR "Compliance")'
+    notes: "SF + remote. SIEM."
+    enabled: true
+
+  - name: Elastic
+    careers_url: https://www.elastic.co/about/careers
+    scan_method: websearch
+    scan_query: '"elastic.co" careers ("Security Engineer" OR "Cloud" OR "Solutions") United States'
+    notes: "Remote-first US."
+    enabled: true
+
+  # -- Defense primes (TX/FL/CA presence, federal-heavy) --
+
+  - name: Lockheed Martin
+    careers_url: https://www.lockheedmartinjobs.com
+    scan_method: websearch
+    scan_query: 'site:lockheedmartinjobs.com ("Cyber" OR "IT Systems" OR "Cloud Engineer" OR "Compliance")'
+    notes: "TX, FL, CA. Cleared roles."
+    enabled: true
+
+  - name: Northrop Grumman
+    careers_url: https://www.northropgrumman.com/careers
+    scan_method: websearch
+    scan_query: 'site:northropgrumman.com/careers ("Cyber" OR "IT Systems" OR "Cloud" OR "Compliance")'
+    notes: "CA, FL."
+    enabled: true
+
+  - name: RTX (Raytheon)
+    careers_url: https://careers.rtx.com
+    scan_method: websearch
+    scan_query: 'site:careers.rtx.com ("Cyber" OR "IT Systems" OR "Cloud" OR "Compliance")'
+    notes: "TX, FL, CA."
+    enabled: true
+
+  - name: General Dynamics
+    careers_url: https://www.gd.com/careers
+    scan_method: websearch
+    scan_query: '"gd.com" careers ("Cyber" OR "IT Systems" OR "Cloud" OR "Compliance")'
+    notes: "TX, FL."
+    enabled: true
+
+  - name: L3Harris
+    careers_url: https://www.l3harris.com/careers
+    scan_method: websearch
+    scan_query: 'site:l3harris.com/careers ("Cyber" OR "IT Systems" OR "Cloud")'
+    notes: "TX, FL HQ."
+    enabled: true
+
+  - name: Booz Allen Hamilton
+    careers_url: https://www.boozallen.com/careers
+    scan_method: websearch
+    scan_query: 'site:boozallen.com/careers ("Cyber" OR "IT Systems" OR "Cloud" OR "Compliance" OR "CMMC")'
+    notes: "Multi US."
+    enabled: true
+
+  - name: Leidos
+    careers_url: https://careers.leidos.com
+    scan_method: websearch
+    scan_query: 'site:careers.leidos.com ("Cyber" OR "IT Systems" OR "Cloud" OR "Compliance")'
+    enabled: true
+
+  - name: SAIC
+    careers_url: https://jobs.saic.com
+    scan_method: websearch
+    scan_query: 'site:jobs.saic.com ("Cyber" OR "IT Systems" OR "Cloud")'
+    enabled: true
+
+  # -- Fintech / Major SaaS (strong IT/sec teams, US presence in target metros) --
+
+  - name: Stripe
+    careers_url: https://stripe.com/jobs
+    scan_method: websearch
+    scan_query: 'site:stripe.com/jobs ("Security Engineer" OR "Corporate IT" OR "Cloud" OR "Compliance") United States'
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  - name: Block (Square)
+    careers_url: https://block.xyz/careers
+    scan_method: websearch
+    scan_query: '"block.xyz" careers ("Security Engineer" OR "IT" OR "Cloud" OR "Compliance")'
+    enabled: true
+
+  - name: Coinbase
+    careers_url: https://www.coinbase.com/careers
+    scan_method: websearch
+    scan_query: '"coinbase" careers ("Security Engineer" OR "IT" OR "Cloud" OR "Compliance")'
+    enabled: true
+
+  - name: Salesforce
+    careers_url: https://careers.salesforce.com
+    scan_method: websearch
+    scan_query: 'site:careers.salesforce.com ("Security Engineer" OR "Cloud" OR "Compliance" OR "IAM") United States'
+    enabled: true
+
+  - name: ServiceNow
+    careers_url: https://careers.servicenow.com
+    scan_method: websearch
+    scan_query: 'site:careers.servicenow.com ("Security Engineer" OR "Cloud" OR "Compliance" OR "IAM") United States'
+    notes: "Santa Clara + Orlando + Austin. You already use ServiceNow."
+    enabled: true
+
+  - name: Workday
+    careers_url: https://workday.wd5.myworkdayjobs.com/Workday
+    scan_method: websearch
+    scan_query: '"workday careers" ("Security Engineer" OR "IT Systems" OR "Cloud" OR "Compliance")'
+    enabled: true
+
+  - name: VMware (Broadcom)
+    careers_url: https://careers.broadcom.com
+    scan_method: websearch
+    scan_query: 'site:careers.broadcom.com ("Security Engineer" OR "Cloud" OR "VMware") United States'
+    enabled: true
+
+  # -- Energy / utilities (Prologis adjacent) --
+
+  - name: Tesla
+    careers_url: https://www.tesla.com/careers
+    scan_method: websearch
+    scan_query: 'site:tesla.com/careers ("IT Systems" OR "Security Engineer" OR "Cloud" OR "Infrastructure") United States'
+    notes: "Austin, TX HQ + Fremont, CA."
+    enabled: true
+
+  - name: PG&E
+    careers_url: https://www.pge.com/en/about/careers
+    scan_method: websearch
+    scan_query: '"pg&e" careers ("IT Systems" OR "Security" OR "Cloud" OR "Compliance")'
+    notes: "Bay Area. You already worked their data."
+    enabled: true
+
+  - name: Southern California Edison
+    careers_url: https://www.edison.com/careers
+    scan_method: websearch
+    scan_query: '"sce" OR "edison" careers ("IT Systems" OR "Security" OR "Cloud" OR "Compliance")'
+    notes: "Rosemead, CA. Former employer -- referral candidate."
+    enabled: true
+
+  - name: Chevron
+    careers_url: https://careers.chevron.com
+    scan_method: websearch
+    scan_query: 'site:careers.chevron.com ("IT Systems" OR "Security" OR "Cloud")'
+    notes: "Houston, TX HQ + San Ramon, CA."
+    enabled: true
