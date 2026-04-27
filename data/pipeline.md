@@ -176,3 +176,25 @@ Paste a URL here and I'll evaluate it.
 - [ ] https://jobs.lever.co/palantir/38758e88-5884-4a11-98ac-d23cab51bc7a | Palantir | Site Reliability Operations Analyst - US Government
 - [ ] https://jobs.lever.co/palantir/1ec0ff9f-3d9d-43bc-8aa0-005a887513d0 | Palantir | Systems Engineer - Business Systems
 
+
+- [ ] https://www.brex.com/careers/8523806002?gh_jid=8523806002 | Brex | Data Engineer
+- [ ] https://www.brex.com/careers/8249885002?gh_jid=8249885002 | Brex | Senior Application Security Engineer
+- [ ] https://www.brex.com/careers/8378840002?gh_jid=8378840002 | Brex | Senior GRC Lead
+- [ ] https://www.brex.com/careers/8339287002?gh_jid=8339287002 | Brex | Senior Security Operations Engineer 
+- [ ] https://www.brex.com/careers/8523435002?gh_jid=8523435002 | Brex | Software Engineer, Forward Deployed Agent Builder
+- [ ] https://careers.airbnb.com/positions/7716311?gh_jid=7716311 | Airbnb | Senior Business Solutions Engineer, BizTech
+- [ ] https://careers.airbnb.com/positions/7640881?gh_jid=7640881 | Airbnb | Senior Data Engineer, BizTech
+- [ ] https://careers.airbnb.com/positions/7256787?gh_jid=7256787 | Airbnb | Senior Data Engineer, Payments
+- [ ] https://careers.airbnb.com/positions/7463663?gh_jid=7463663 | Airbnb | Senior Staff Data Engineer, Marketplaces DNA
+- [ ] https://careers.airbnb.com/positions/7556182?gh_jid=7556182 | Airbnb | Senior Systems Engineer, OIC (BizTech)
+- [ ] https://careers.airbnb.com/positions/7733495?gh_jid=7733495 | Airbnb | Staff Analytics Engineer 
+- [ ] https://careers.airbnb.com/positions/7095225?gh_jid=7095225 | Airbnb | Staff Software Engineer, Data Engineering
+- [ ] https://careers.airbnb.com/positions/7093737?gh_jid=7093737 | Airbnb | Staff Systems Engineer, BizTech
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7714127 | Pinterest | AI Solutions Engineer
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7782571 | Pinterest | ML Platform Engineer, tvScientific
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7494536 | Pinterest | Payroll Administrator II
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7642272 | Pinterest | Sr. Data Engineer, tvScientific
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7642249 | Pinterest | Sr. ML Platform Engineer, tvScientific
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7747172 | Pinterest | Sr. Site Reliability Engineer
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7713147 | Pinterest | Staff Collaboration Systems Engineer, Google Workspace
+- [ ] https://www.pinterestcareers.com/jobs/?gh_jid=7642270 | Pinterest | Staff Data Engineer, tvScientific

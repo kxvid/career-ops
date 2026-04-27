@@ -104,6 +104,181 @@ function parseGmailEvents(tsv) {
 }
 const gmailEvents = parseGmailEvents(gmailEventsTsv);
 
+// -- Fit scoring ------------------------------------------------------------
+// Deterministic, archetype-driven. 0-100. See README for weights.
+const ARCHETYPE_KEYWORDS = {
+  'IT Systems / Infrastructure Engineer': {
+    pos: ['it systems', 'infrastructure', 'sysadmin', 'system administrator', 'endpoint', 'corporate it', 'enterprise it', 'site reliability', 'sre ', 'reliability engineer', 'corporate engineer', 'business systems'],
+    weight: 1.0,
+  },
+  'Cloud Engineer (Azure Gov / AWS / M365)': {
+    pos: ['cloud engineer', 'cloud infrastructure', 'cloud operations', 'cloudops', 'cloud architect', 'azure', 'aws engineer', 'gcp engineer', 'public sector', 'govcloud', 'federal'],
+    weight: 1.0,
+  },
+  'Cybersecurity / Compliance Engineer (CMMC, NIST, GRC)': {
+    pos: ['security engineer', 'cybersecurity', 'cyber security', 'information security', 'infosec', 'secops', 'security operations', 'detection', 'compliance', 'grc', 'governance risk', 'risk engineer', 'audit', 'cmmc', 'nist', 'fedramp', 'zero trust', 'security architect', 'vulnerability', 'application security', 'product security', 'cloud security', 'platform security', 'corporate security'],
+    weight: 1.0,
+  },
+  'Identity & Access Management Engineer': {
+    pos: ['iam ', 'identity engineer', 'identity & access', 'identity and access', 'access management', 'okta', 'sso', 'single sign-on', 'pam ', 'privileged access'],
+    weight: 0.85,
+  },
+  'DevOps / Platform Engineer': {
+    pos: ['devops', 'platform engineer', 'reliability', 'observability', 'kubernetes', 'k8s'],
+    weight: 0.6,
+  },
+  'Data / Analytics Engineer (Snowflake/SQL)': {
+    pos: ['data engineer', 'analytics engineer', 'snowflake'],
+    weight: 0.5,
+  },
+  'Solutions / Customer Engineer (Technical)': {
+    pos: ['solutions engineer', 'solutions architect', 'forward deployed', 'customer engineer', 'implementation engineer', 'technical account manager', 'deployed engineer'],
+    weight: 0.6,
+  },
+};
+
+const SKILL_TOKENS = [
+  'aws', 'azure', 'gcp', 'm365', 'microsoft 365', 'gcc high', 'snowflake', 'sql',
+  'python', 'powershell', 'okta', 'duo', 'beyondtrust', 'crowdstrike', 'splunk',
+  'sumologic', 'tenable', 'tanium', 'sccm', 'active directory', 'cisco', 'vlan',
+  'cmmc', 'nist', 'fedramp', 'dfars', 'cui', 'zero trust', 'salesforce',
+  'servicenow', 'tableau', 'power bi', 'rpa', 'uipath', 'ansible', 'terraform',
+  'docker', 'kubernetes', 'github', 'gitlab', 'jenkins', 'circleci',
+];
+
+const TARGET_METROS_TOKENS = [
+  'remote', 'united states', 'usa', ' u.s.', ' us ',
+  'los angeles', 'la,', 'orange county', 'irvine', 'san diego', 'san francisco',
+  'sf,', 'bay area', 'palo alto', 'menlo park', 'mountain view', 'sunnyvale',
+  'santa clara', 'cupertino', 'fremont',
+  'seattle', 'redmond', 'bellevue',
+  'new york', 'nyc', 'manhattan', 'brooklyn',
+  'austin', 'dallas', 'houston', 'plano', 'frisco',
+  'miami', 'tampa', 'orlando', 'jacksonville',
+];
+
+const NON_TARGET_METROS = [
+  'london', 'berlin', 'paris', 'amsterdam', 'lisbon', 'munich', 'dublin',
+  'madrid', 'barcelona', 'milan', 'rome', 'stockholm', 'copenhagen', 'brussels',
+  'tokyo', 'osaka', 'seoul', 'singapore', 'hong kong', 'shanghai', 'shenzhen',
+  'sydney', 'melbourne', 'canberra', 'tel aviv',
+  'bangalore', 'bengaluru', 'hyderabad', 'pune', 'mumbai', 'delhi', 'chennai',
+  'mexico city', 'são paulo', 'sao paulo', 'buenos aires',
+  'toronto', 'montreal', 'vancouver', 'ottawa',
+  'india', 'japan', 'korea', 'china', 'germany', 'france', 'spain', 'italy',
+  'netherlands', 'australia', 'canada',
+];
+
+const SENIORITY_BAD = [
+  /\bengineering manager\b/i, /\bmanager,/i, /\bmanager of\b/i, /\bdirector,/i,
+  /\bdirector of\b/i, /\bhead of\b/i, /\bvp,/i, /\bvp /i, /\bvice president\b/i,
+  /\bdistinguished\b/i, /\bfellow engineer\b/i, /\bprincipal\b/i, /\bstaff\b/i,
+];
+
+const SENIORITY_GREAT = [/\bmid\b/i, /\bsenior\b/i, /\bii\b/i, /\biii\b/i];
+const SENIORITY_TOO_LOW = [/\bjunior\b/i, /\bnew[- ]grad\b/i, /\bintern(ship)?\b/i, /\bassociate\b/i];
+
+const NEGATIVE_TITLES = [
+  /\bmachine learning engineer\b/i, /\bml engineer\b/i, /\bdeep learning\b/i,
+  /\bnlp engineer\b/i, /\bresearch (scientist|engineer|er)\b/i, /\bresearcher\b/i,
+  /\bapplied scientist\b/i, /\bdata scientist\b/i, /\bquant\b/i,
+  /\bios\b/i, /\bandroid\b/i, /\bmobile (developer|engineer)\b/i,
+  /\bfront[- ]?end\b/i, /\bui engineer\b/i, /\bgame\b/i,
+  /\bembedded\b/i, /\bfirmware\b/i, /\brf engineer\b/i,
+  /\b(russian|korean|mandarin|cantonese|japanese|czech|polish|ukrainian|portuguese|italian|spanish|dutch|german|french)\s+(speaker|speaking)\b/i,
+];
+
+const TIER1_BRANDS = new Set(['Anthropic', 'OpenAI', 'xAI', 'Anduril', 'Palantir', 'Shield AI', 'Microsoft', 'Amazon / AWS', 'Google', 'Apple', 'Meta', 'Cloudflare', 'Stripe', 'CrowdStrike', 'Okta', 'Wiz', 'Snowflake', 'Databricks']);
+
+const FED_KEYWORDS = ['us government', 'federal', 'public sector', 'cmmc', 'nist', 'fedramp', 'dod', 'department of defense', 'defense', 'cleared'];
+const DEFENSE_COMPANIES = new Set(['Anduril', 'Palantir', 'Shield AI', 'Saronic', 'Vannevar Labs', 'Skydio', 'Rebellion Defense', 'Saildrone', 'Hadrian', 'Lockheed Martin', 'Northrop Grumman', 'RTX (Raytheon)', 'General Dynamics', 'L3Harris', 'Booz Allen Hamilton', 'Leidos', 'SAIC']);
+
+// Convert a token list into word-boundary regex patterns. Phrases use \b at
+// start/end only. Handles tokens with hyphens, spaces, dots, ampersands.
+function compileTokens(tokens) {
+  return tokens.map(t => {
+    const escaped = t.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`, 'i');
+  });
+}
+
+const ARCHETYPE_REGEX = Object.fromEntries(
+  Object.entries(ARCHETYPE_KEYWORDS).map(([name, def]) => [name, { regex: compileTokens(def.pos), weight: def.weight }])
+);
+const SKILL_REGEX = compileTokens(SKILL_TOKENS);
+const FED_REGEX = compileTokens(FED_KEYWORDS);
+const TARGET_METROS_REGEX = compileTokens(TARGET_METROS_TOKENS.map(t => t.replace(/^\s+|\s+$/g, '').replace(/,$/, '')));
+const NON_TARGET_METROS_REGEX = compileTokens(NON_TARGET_METROS);
+
+function scoreListing(item) {
+  const title = (item.title || '');
+  let score = 0;
+  let factors = {};
+
+  // Archetype match — primary signal
+  let archMax = 0;
+  let archHit = '';
+  let archHitTokens = [];
+  for (const [name, def] of Object.entries(ARCHETYPE_REGEX)) {
+    const hits = def.regex.filter(r => r.test(title));
+    if (hits.length > 0) {
+      const v = Math.min(55, hits.length * 18) * def.weight;
+      if (v > archMax) { archMax = v; archHit = name; archHitTokens = hits.map(r => r.source); }
+    }
+  }
+  score += archMax;
+  factors.archetype = { score: archMax, match: archHit, hits: archHitTokens };
+
+  // Skills overlap
+  const skillHits = SKILL_REGEX.filter(r => r.test(title)).length;
+  const skillScore = Math.min(20, skillHits * 5);
+  score += skillScore;
+  factors.skills = { score: skillScore, hits: skillHits };
+
+  // Seniority
+  let senScore = 0;
+  if (SENIORITY_BAD.some(re => re.test(title))) senScore -= 40;
+  else if (SENIORITY_TOO_LOW.some(re => re.test(title))) senScore -= 35;
+  else if (SENIORITY_GREAT.some(re => re.test(title))) senScore += 6;
+  score += senScore;
+  factors.seniority = { score: senScore };
+
+  // Location (often missing from title — only bonus/penalty if explicit)
+  let locScore = 0;
+  if (TARGET_METROS_REGEX.some(r => r.test(title))) locScore += 10;
+  if (NON_TARGET_METROS_REGEX.some(r => r.test(title))) locScore -= 35;
+  score += locScore;
+  factors.location = { score: locScore };
+
+  // Federal / clearance bonus
+  let fedScore = 0;
+  if (FED_REGEX.some(r => r.test(title))) fedScore += 10;
+  if (DEFENSE_COMPANIES.has(item.company)) fedScore += 8;
+  score += fedScore;
+  factors.federal = { score: fedScore };
+
+  // Negative keywords (catches what filter missed)
+  let negScore = 0;
+  for (const re of NEGATIVE_TITLES) if (re.test(title)) negScore -= 35;
+  negScore = Math.max(-60, negScore);
+  score += negScore;
+  factors.negatives = { score: negScore };
+
+  // Brand bonus
+  let brand = 0;
+  if (TIER1_BRANDS.has(item.company)) brand += 10;
+  score += brand;
+  factors.brand = { score: brand };
+
+  return { score: Math.max(0, Math.min(100, Math.round(score))), factors };
+}
+
+for (const item of pipeline) {
+  const { score, factors } = scoreListing(item);
+  item.fit = score;
+  item.fit_factors = factors;
+}
+
 // -- Reports list --
 let reports = [];
 const reportsDir = path.join(root, 'reports');
@@ -206,21 +381,30 @@ const html = `<!doctype html>
 
     <!-- Pipeline -->
     <section data-section="pipeline" class="hidden">
-      <div class="bg-white rounded-lg shadow-sm p-4 mb-4 flex flex-wrap gap-3 items-center">
-        <input id="pl-search" type="search" placeholder="Search role or company…" class="border rounded-md px-3 py-2 text-sm flex-1 min-w-[200px]" />
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+        <input id="pl-search" type="search" placeholder="Search role or company…" class="border rounded-md px-3 py-2 text-sm" />
         <select id="pl-company" class="border rounded-md px-3 py-2 text-sm"></select>
-        <label class="text-sm flex items-center gap-2"><input type="checkbox" id="pl-us-only" /> US only</label>
-        <label class="text-sm flex items-center gap-2"><input type="checkbox" id="pl-no-junior" checked /> Hide Junior/New Grad/Manager</label>
-        <span class="text-xs text-gray-500" id="pl-summary"></span>
+        <div class="flex items-center gap-2 text-sm">
+          <span class="font-medium">Min fit:</span>
+          <input type="range" id="pl-min-fit" min="0" max="100" step="5" value="40" class="flex-1" />
+          <span id="pl-min-fit-val" class="font-mono w-10 text-right">40</span>
+        </div>
+        <div class="flex flex-wrap gap-3 text-sm">
+          <label class="flex items-center gap-2"><input type="checkbox" id="pl-hide-decided" checked /> Hide decided</label>
+          <label class="flex items-center gap-2"><input type="checkbox" id="pl-us-only" /> US only</label>
+          <button id="pl-export" class="ml-auto bg-gray-900 text-white text-xs px-3 py-1.5 rounded">Export feedback (TSV)</button>
+        </div>
+        <div class="md:col-span-2 text-xs text-gray-500 flex flex-wrap gap-3" id="pl-summary"></div>
       </div>
       <div class="bg-white rounded-lg shadow-sm overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-gray-100 text-left">
             <tr>
+              <th class="px-3 py-2 w-16">Fit</th>
               <th class="px-3 py-2">Company</th>
               <th class="px-3 py-2">Title</th>
-              <th class="px-3 py-2">First seen</th>
-              <th class="px-3 py-2">Action</th>
+              <th class="px-3 py-2 w-24">First seen</th>
+              <th class="px-3 py-2 w-44">Decision</th>
             </tr>
           </thead>
           <tbody id="pl-rows"></tbody>
@@ -360,24 +544,49 @@ function renderOverview() {
       <div><b>Tier 3:</b> \${t3}</div>
     </div>\`;
 
-  const recent = D.pipeline.slice(0, 8);
-  document.getElementById('overview-recent').innerHTML = recent.length === 0
+  const top = [...D.pipeline].sort((a, b) => (b.fit || 0) - (a.fit || 0)).slice(0, 10);
+  document.getElementById('overview-recent').innerHTML = top.length === 0
     ? '<p class="text-sm text-gray-500">No listings yet.</p>'
-    : '<ul class="divide-y text-sm">' + recent.map(p =>
-        \`<li class="py-2 flex justify-between gap-3"><span><b>\${esc(p.company)}</b> · \${esc(p.title)}</span><a class="text-blue-600 underline shrink-0" href="\${esc(p.url)}" target="_blank">open ↗</a></li>\`
+    : '<ul class="divide-y text-sm">' + top.map(p =>
+        \`<li class="py-2 flex justify-between gap-3 items-center"><span><span class="pill \${fitColor(p.fit || 0)} mr-2">\${p.fit || 0}</span><b>\${esc(p.company)}</b> · \${esc(p.title)}</span><a class="text-blue-600 underline shrink-0" href="\${esc(p.url)}" target="_blank">open ↗</a></li>\`
       ).join('') + '</ul>';
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 
-// -- Pipeline --
+// -- Pipeline + decisions --
+const DECISIONS_KEY = 'careerops:decisions:v1';
+function loadDecisions() {
+  try { return JSON.parse(localStorage.getItem(DECISIONS_KEY) || '{}'); } catch { return {}; }
+}
+function saveDecision(url, decision) {
+  const d = loadDecisions();
+  if (decision === null) delete d[url];
+  else d[url] = { decision, ts: new Date().toISOString() };
+  localStorage.setItem(DECISIONS_KEY, JSON.stringify(d));
+}
+function fitColor(s) {
+  if (s >= 70) return 'bg-emerald-100 text-emerald-800';
+  if (s >= 50) return 'bg-blue-100 text-blue-800';
+  if (s >= 30) return 'bg-amber-100 text-amber-800';
+  return 'bg-gray-100 text-gray-600';
+}
+function decisionPill(d) {
+  const map = { interested: 'bg-emerald-50 text-emerald-700', not: 'bg-gray-100 text-gray-500 line-through', applied: 'bg-blue-50 text-blue-700', rejected: 'bg-red-50 text-red-700' };
+  const label = { interested: '👍', not: '👎', applied: '✓ applied', rejected: '✗ rejected' };
+  if (!d) return '';
+  return \`<span class="pill \${map[d] || 'pill-status'}">\${label[d] || d}</span>\`;
+}
+const NON_US_KEYS = ['London', 'Bengaluru', 'Bangalore', 'Hyderabad', 'Tokyo', 'Korea', 'Japan', 'Berlin', 'Paris', 'Amsterdam', 'Singapore', 'India', 'Canberra', 'Australia', 'Ottawa', 'Canada', 'Czech', 'Russian', 'Ukrainian', 'Nordics', 'Benelux', 'Shanghai', 'France', 'Germany', 'Mexico', 'Brazil', 'Sao Paulo', 'São Paulo'];
+
 function renderPipeline() {
   const search = document.getElementById('pl-search').value.toLowerCase();
   const co = document.getElementById('pl-company').value;
   const usOnly = document.getElementById('pl-us-only').checked;
-  const noJunior = document.getElementById('pl-no-junior').checked;
-  const nonUS = ['London', 'Bengaluru', 'Bangalore', 'Hyderabad', 'Tokyo', 'Korea', 'Japan', 'Berlin', 'Paris', 'Amsterdam', 'Singapore', 'India', 'Canberra', 'Australia', 'Ottawa', 'Canada', 'Czech', 'Russian', 'Ukrainian', 'Nordics', 'Benelux', 'Shanghai', 'France', 'Germany'];
-  const junior = /\\b(Junior|New Grad|Intern|Internship|Manager|Director|Head of|Principal|Staff)\\b/i;
+  const hideDecided = document.getElementById('pl-hide-decided').checked;
+  const minFit = +document.getElementById('pl-min-fit').value;
+  document.getElementById('pl-min-fit-val').textContent = minFit;
+  const decisions = loadDecisions();
 
   let rows = D.pipeline.filter(p => {
     if (co && p.company !== co) return false;
@@ -385,31 +594,80 @@ function renderPipeline() {
       const hay = (p.company + ' ' + p.title).toLowerCase();
       if (!hay.includes(search)) return false;
     }
-    if (usOnly && nonUS.some(k => p.title.includes(k))) return false;
-    if (noJunior && junior.test(p.title)) return false;
+    if (usOnly && NON_US_KEYS.some(k => p.title.includes(k))) return false;
+    if ((p.fit || 0) < minFit) return false;
+    if (hideDecided && decisions[p.url]) return false;
     return true;
   });
+  rows.sort((a, b) => (b.fit || 0) - (a.fit || 0));
 
-  document.getElementById('pl-summary').textContent = rows.length + ' / ' + D.pipeline.length + ' listings';
-  document.getElementById('pl-rows').innerHTML = rows.map(p => \`
-    <tr class="border-t hover:bg-gray-50">
-      <td class="px-3 py-2 font-medium">\${esc(p.company)}</td>
-      <td class="px-3 py-2">\${esc(p.title)}</td>
-      <td class="px-3 py-2 text-gray-500 text-xs">\${esc(p.first_seen || '')}</td>
-      <td class="px-3 py-2"><a class="text-blue-600 underline" href="\${esc(p.url)}" target="_blank">Open ↗</a></td>
-    </tr>\`).join('');
+  // Summary stats
+  const decided = Object.values(decisions);
+  const counts = decided.reduce((acc, d) => { acc[d.decision] = (acc[d.decision] || 0) + 1; return acc; }, {});
+  document.getElementById('pl-summary').innerHTML =
+    '<span><b>' + rows.length + '</b> / ' + D.pipeline.length + ' shown</span>' +
+    '<span>👍 ' + (counts.interested || 0) + '</span>' +
+    '<span>👎 ' + (counts.not || 0) + '</span>' +
+    '<span>✓ ' + (counts.applied || 0) + '</span>' +
+    '<span>✗ ' + (counts.rejected || 0) + '</span>';
 
-  if (rows.length === 0) {
-    document.getElementById('pl-rows').innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">No matches.</td></tr>';
-  }
+  document.getElementById('pl-rows').innerHTML = rows.length === 0
+    ? '<tr><td colspan="5" class="text-center py-8 text-gray-500">No matches at this threshold. Lower min-fit or clear filters.</td></tr>'
+    : rows.map(p => {
+        const dec = decisions[p.url]?.decision;
+        return \`<tr class="border-t hover:bg-gray-50" data-url="\${esc(p.url)}">
+          <td class="px-3 py-2"><span class="pill \${fitColor(p.fit || 0)}">\${p.fit || 0}</span></td>
+          <td class="px-3 py-2 font-medium">\${esc(p.company)}</td>
+          <td class="px-3 py-2"><a href="\${esc(p.url)}" target="_blank" class="hover:underline">\${esc(p.title)}</a> \${decisionPill(dec)}</td>
+          <td class="px-3 py-2 text-gray-500 text-xs">\${esc(p.first_seen || '')}</td>
+          <td class="px-3 py-2">
+            <div class="flex gap-1 text-xs">
+              <button data-d="interested" title="Interested" class="px-2 py-1 rounded \${dec==='interested'?'bg-emerald-600 text-white':'bg-gray-100 hover:bg-emerald-100'}">👍</button>
+              <button data-d="not" title="Not interested" class="px-2 py-1 rounded \${dec==='not'?'bg-gray-700 text-white':'bg-gray-100 hover:bg-gray-200'}">👎</button>
+              <button data-d="applied" title="Applied" class="px-2 py-1 rounded \${dec==='applied'?'bg-blue-600 text-white':'bg-gray-100 hover:bg-blue-100'}">✓</button>
+              <button data-d="rejected" title="Rejected by them" class="px-2 py-1 rounded \${dec==='rejected'?'bg-red-600 text-white':'bg-gray-100 hover:bg-red-100'}">✗</button>
+            </div>
+          </td>
+        </tr>\`;
+      }).join('');
+
+  // Wire decision buttons
+  document.querySelectorAll('#pl-rows tr[data-url]').forEach(tr => {
+    tr.querySelectorAll('button[data-d]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = tr.dataset.url;
+        const d = btn.dataset.d;
+        const cur = loadDecisions()[url]?.decision;
+        saveDecision(url, cur === d ? null : d);
+        renderPipeline();
+      });
+    });
+  });
 }
+
 function setupPipelineFilters() {
   const companies = [...new Set(D.pipeline.map(p => p.company))].sort();
   const sel = document.getElementById('pl-company');
   sel.innerHTML = '<option value="">All companies</option>' + companies.map(c => \`<option>\${esc(c)}</option>\`).join('');
-  ['pl-search', 'pl-company', 'pl-us-only', 'pl-no-junior'].forEach(id =>
+  ['pl-search', 'pl-company', 'pl-us-only', 'pl-hide-decided', 'pl-min-fit'].forEach(id =>
     document.getElementById(id).addEventListener('input', renderPipeline)
   );
+  document.getElementById('pl-export').addEventListener('click', exportFeedback);
+}
+
+function exportFeedback() {
+  const decisions = loadDecisions();
+  const rows = [['decision', 'ts', 'fit', 'company', 'title', 'url'].join('\\t')];
+  for (const p of D.pipeline) {
+    const d = decisions[p.url];
+    if (!d) continue;
+    rows.push([d.decision, d.ts, p.fit || 0, p.company, p.title, p.url].join('\\t'));
+  }
+  const blob = new Blob([rows.join('\\n') + '\\n'], { type: 'text/tab-separated-values' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'feedback.tsv';
+  a.click();
 }
 
 // -- Applications --
