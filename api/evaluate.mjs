@@ -51,7 +51,7 @@ When the JD's compensation is below the candidate's floor, lower the recommendat
 const SCHEMA = {
   type: 'object',
   properties: {
-    match_score: { type: 'integer', minimum: 0, maximum: 100 },
+    match_score: { type: 'integer' },
     recommendation: { type: 'string', enum: ['apply', 'maybe', 'skip'] },
     tldr: { type: 'string' },
     archetype: { type: 'string' },

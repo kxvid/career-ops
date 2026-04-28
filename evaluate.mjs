@@ -193,7 +193,7 @@ Evaluate this role against the candidate profile above. Return JSON conforming t
 const SCHEMA = {
   type: 'object',
   properties: {
-    match_score: { type: 'integer', minimum: 0, maximum: 100 },
+    match_score: { type: 'integer' },
     recommendation: { type: 'string', enum: ['apply', 'maybe', 'skip'] },
     tldr: { type: 'string' },
     archetype: { type: 'string' },
