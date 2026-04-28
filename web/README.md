@@ -2,6 +2,19 @@
 
 A self-contained static dashboard that renders your CV, profile, scanned pipeline, applications tracker, and evaluation reports — all from the markdown/YAML files in this repo.
 
+## New: Web-native Apply Assist (no local runtime)
+
+Once deployed to Vercel, the dashboard includes an **Apply Assist** tab:
+
+1. Pick a listing from your pipeline.
+2. Click **Copy Autofill Bookmarklet**.
+3. Save that bookmarklet in your browser.
+4. Open the target application form and click the bookmarklet.
+
+It fills common fields (name, email, phone, LinkedIn, location, why-role/company text) and highlights submit buttons.
+
+**Safety:** it never submits the application for you; final submit is always manual.
+
 ## Local preview (no deploy needed)
 
 ```bash
