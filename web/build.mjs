@@ -154,6 +154,7 @@ const html = `<!doctype html>
   <nav class="mb-5 flex flex-wrap gap-2" id="tabs">
     <button data-tab="overview" class="tab active px-4 py-2 rounded-md text-sm font-medium">Overview</button>
     <button data-tab="pipeline" class="tab px-4 py-2 rounded-md text-sm font-medium">Pipeline <span id="pl-count" class="ml-1 text-xs opacity-75"></span></button>
+    <button data-tab="apply-assist" class="tab px-4 py-2 rounded-md text-sm font-medium">Apply Assist</button>
     <button data-tab="applications" class="tab px-4 py-2 rounded-md text-sm font-medium">Applications <span id="ap-count" class="ml-1 text-xs opacity-75"></span></button>
     <button data-tab="cv" class="tab px-4 py-2 rounded-md text-sm font-medium">CV</button>
     <button data-tab="profile" class="tab px-4 py-2 rounded-md text-sm font-medium">Profile</button>
@@ -203,6 +204,30 @@ const html = `<!doctype html>
           </thead>
           <tbody id="pl-rows"></tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- Apply Assist -->
+    <section data-section="apply-assist" class="hidden space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+        <p class="font-semibold text-blue-900">Web-native autofill workflow (no local script required)</p>
+        <ol class="list-decimal ml-5 mt-2 space-y-1 text-blue-900">
+          <li>Select a role below and click <b>Copy Autofill Bookmarklet</b>.</li>
+          <li>Create/update a browser bookmark and paste the copied bookmarklet URL.</li>
+          <li>Open the application form, then click that bookmark to fill fields instantly.</li>
+        </ol>
+        <p class="mt-2 text-blue-800">This never submits the application; you review and submit manually.</p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm p-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <select id="aa-job" class="border rounded-md px-3 py-2 text-sm lg:col-span-2"></select>
+        <a id="aa-open" target="_blank" class="inline-flex items-center justify-center rounded-md bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-gray-700">Open listing ↗</a>
+        <input id="aa-why-role" type="text" class="border rounded-md px-3 py-2 text-sm lg:col-span-3" placeholder="Why this role (optional custom text)" />
+        <input id="aa-why-company" type="text" class="border rounded-md px-3 py-2 text-sm lg:col-span-3" placeholder="Why this company (optional custom text)" />
+        <div class="lg:col-span-3 flex flex-wrap gap-2">
+          <button id="aa-copy" class="rounded-md bg-blue-600 text-white px-3 py-2 text-sm font-medium hover:bg-blue-500">Copy Autofill Bookmarklet</button>
+          <span id="aa-status" class="text-sm text-gray-600"></span>
+        </div>
       </div>
     </section>
 
@@ -419,6 +444,75 @@ if (D.reports.length === 0) {
 renderOverview();
 setupPipelineFilters(); renderPipeline();
 setupApplicationsFilters(); renderApplications();
+setupApplyAssist();
+
+function setupApplyAssist() {
+  const sel = document.getElementById('aa-job');
+  const open = document.getElementById('aa-open');
+  const status = document.getElementById('aa-status');
+  const whyRoleEl = document.getElementById('aa-why-role');
+  const whyCompanyEl = document.getElementById('aa-why-company');
+  const copyBtn = document.getElementById('aa-copy');
+
+  const jobs = D.pipeline.slice(0, 500);
+  sel.innerHTML = jobs.length === 0
+    ? '<option value="">No pipeline listings found</option>'
+    : jobs.map((p, i) => \`<option value="\${i}">\${esc(p.company)} — \${esc(p.title)}</option>\`).join('');
+
+  function updateOpenLink() {
+    const idx = Number(sel.value || 0);
+    const job = jobs[idx];
+    if (!job) {
+      open.removeAttribute('href');
+      status.textContent = 'No listing selected.';
+      return null;
+    }
+    open.href = job.url;
+    return job;
+  }
+
+  function buildBookmarklet(job) {
+    const payload = {
+      candidate: D.profile?.candidate || {},
+      role: job.title,
+      company: job.company,
+      whyRole: whyRoleEl.value.trim() || \`I am excited about the \${job.title} role because it matches my technical background and lets me create measurable impact quickly.\`,
+      whyCompany: whyCompanyEl.value.trim() || \`I am interested in \${job.company} because of the mission, technical rigor, and opportunity to solve meaningful problems.\`,
+      additionalInfo: 'I prepare targeted applications with role-specific proof points and measurable outcomes.',
+    };
+
+    const script = \`(()=>{const P=\${JSON.stringify(payload).replace(/</g, '\\\\u003c')};
+const N=s=>String(s||'').toLowerCase().replace(/\\\\s+/g,' ').trim();
+const split=n=>{const p=String(n||'').trim().split(/\\\\s+/).filter(Boolean);return{f:p[0]||'',l:p.slice(1).join(' ')}};
+const name=split(P.candidate.full_name||'');
+const values={full_name:P.candidate.full_name||'',first_name:name.f,last_name:name.l,email:P.candidate.email||'',phone:P.candidate.phone||'',linkedin:(P.candidate.linkedin||'').startsWith('http')?(P.candidate.linkedin||''):((P.candidate.linkedin||'')?('https://'+P.candidate.linkedin):''),portfolio:P.candidate.portfolio_url||'',github:P.candidate.github||'',location:P.candidate.location||'',why_role:P.whyRole,why_company:P.whyCompany,additional_info:P.additionalInfo};
+const fill=(patterns,val)=>{if(!val)return 0;let count=0;for(const label of Array.from(document.querySelectorAll('label'))){const text=N(label.textContent||'');if(!patterns.some(p=>text.includes(p)))continue;let el=null;const f=label.getAttribute('for');if(f)el=document.getElementById(f);if(!el)el=label.querySelector('input,textarea');if(!el){const par=label.closest('div,fieldset,section,form')||label.parentElement;if(par)el=par.querySelector('input,textarea');}if(!el)continue;const tag=(el.tagName||'').toLowerCase();const type=(el.getAttribute('type')||'').toLowerCase();if(tag==='input'&&['checkbox','radio','file','submit','button'].includes(type))continue;el.focus();el.value=val;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));count++;}return count;};
+let total=0;total+=fill(['full name','name'],values.full_name);total+=fill(['first name','given name'],values.first_name);total+=fill(['last name','family name','surname'],values.last_name);total+=fill(['email','email address'],values.email);total+=fill(['phone','mobile','phone number'],values.phone);total+=fill(['linkedin'],values.linkedin);total+=fill(['portfolio','website','personal website'],values.portfolio);total+=fill(['github'],values.github);total+=fill(['location','city'],values.location);total+=fill(['why this role','why are you interested','why do you want this job'],values.why_role);total+=fill(['why this company','why us','why do you want to work'],values.why_company);total+=fill(['additional information','anything else','cover letter'],values.additional_info);
+for(const b of Array.from(document.querySelectorAll('button,input[type=\"submit\"]'))){const t=(b.textContent||b.getAttribute('value')||'').toLowerCase();if(t.includes('submit')||t.includes('apply')||t.includes('send')){b.style.outline='3px solid #ff3b30';b.style.boxShadow='0 0 0 4px rgba(255,59,48,0.25)';b.title='Manual review required. Do not auto-submit.';}}
+alert('Career-Ops autofill completed. Filled '+total+' field(s). Review everything and submit manually.');})();\`;
+    return 'javascript:' + script;
+  }
+
+  sel.addEventListener('change', () => {
+    updateOpenLink();
+    status.textContent = '';
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    const job = updateOpenLink();
+    if (!job) return;
+    const bookmarklet = buildBookmarklet(job);
+    try {
+      await navigator.clipboard.writeText(bookmarklet);
+      status.textContent = 'Copied. Paste into a browser bookmark URL, then click it on the application page.';
+    } catch {
+      status.textContent = 'Clipboard blocked. Copy manually from the prompt.';
+      window.prompt('Copy this bookmarklet URL:', bookmarklet);
+    }
+  });
+
+  updateOpenLink();
+}
 </script>
 </body>
 </html>`;
