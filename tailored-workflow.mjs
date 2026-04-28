@@ -66,6 +66,7 @@ async function main() {
   console.log(`✅ CV optimizer generated: ${optimizerPath}`);
   console.log(`✅ Application pack generated: ${applierPath}`);
   console.log('ℹ️ Reminder: this tool prepares materials, but never submits applications for you.');
+  console.log('ℹ️ Optional: run `npm run apply:assist -- --url=<application-url>` to autofill common fields before manual submit.');
 }
 
 function getArgValue(name, fallback = '') {

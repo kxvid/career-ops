@@ -113,6 +113,10 @@ npm run tailor -- --scan --top=20 --job=1
 # - output/tailored-job-board.md
 # - output/cv-optimizer-*.md
 # - output/applier-pack-*.md
+
+# 8. (Optional) Open a real application form and autofill common fields
+npm run apply:assist -- --url=https://boards.greenhouse.io/example/jobs/123
+# Browser will pause before submit so you can review and click manually
 ```
 
 > **The system is designed to be customized by Claude itself.** Modes, archetypes, scoring weights, negotiation scripts -- just ask Claude to change them. It reads the same files it uses, so it knows exactly what to edit.

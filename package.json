@@ -16,6 +16,7 @@
     "liveness": "node check-liveness.mjs",
     "scan": "node scan.mjs",
     "tailor": "node tailored-workflow.mjs",
+    "apply:assist": "node apply-assist.mjs",
     "gemini:eval": "node gemini-eval.mjs"
   },
   "keywords": [

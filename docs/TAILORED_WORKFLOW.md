@@ -30,6 +30,16 @@ npm run tailor -- --scan --top=20 --job=1
 - `output/cv-optimizer-{company}-{role}.md`
 - `output/applier-pack-{company}-{role}.md`
 
+## Optional live form autofill
+
+After generating your pack, you can open a real application form and autofill common fields:
+
+```bash
+npm run apply:assist -- --url=https://boards.greenhouse.io/example/jobs/123
+```
+
+This helper fills standard text fields only and **stops before submit**.
+
 ## Notes
 
 - The ranking is deterministic keyword-fit, not LLM scoring.
