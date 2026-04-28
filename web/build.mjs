@@ -404,6 +404,7 @@ const html = `<!doctype html>
               <th class="px-3 py-2">Company</th>
               <th class="px-3 py-2">Title</th>
               <th class="px-3 py-2 w-24">First seen</th>
+              <th class="px-3 py-2 w-24">Eval</th>
               <th class="px-3 py-2 w-44">Decision</th>
             </tr>
           </thead>
@@ -479,6 +480,20 @@ const html = `<!doctype html>
       </div>
     </section>
   </main>
+
+  <!-- Evaluate modal -->
+  <div id="ev-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto" onclick="if(event.target===this) closeEvalModal()">
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full my-8 p-6">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 class="text-xl font-semibold" id="ev-title"></h2>
+          <p class="text-sm text-gray-600" id="ev-subtitle"></p>
+        </div>
+        <button onclick="closeEvalModal()" class="text-gray-500 hover:text-gray-900 text-2xl leading-none">×</button>
+      </div>
+      <div id="ev-body"></div>
+    </div>
+  </div>
 
   <footer class="text-center text-xs text-gray-400 mt-10 mb-4">
     Career-Ops dashboard · Static build · Re-run <code class="bg-gray-100 px-1">node web/build.mjs</code> to refresh.
@@ -615,11 +630,16 @@ function renderPipeline() {
     ? '<tr><td colspan="5" class="text-center py-8 text-gray-500">No matches at this threshold. Lower min-fit or clear filters.</td></tr>'
     : rows.map(p => {
         const dec = decisions[p.url]?.decision;
-        return \`<tr class="border-t hover:bg-gray-50" data-url="\${esc(p.url)}">
+        const cached = D.evalCache?.[p.url];
+        const evalBtn = cached
+          ? \`<button data-eval class="px-2 py-1 rounded text-xs bg-emerald-600 text-white hover:bg-emerald-700" title="Re-show evaluation">View (\${cached.match_score})</button>\`
+          : \`<button data-eval class="px-2 py-1 rounded text-xs bg-gray-900 text-white hover:bg-gray-700" title="Evaluate with Claude">Evaluate</button>\`;
+        return \`<tr class="border-t hover:bg-gray-50" data-url="\${esc(p.url)}" data-company="\${esc(p.company)}" data-title="\${esc(p.title)}">
           <td class="px-3 py-2"><span class="pill \${fitColor(p.fit || 0)}">\${p.fit || 0}</span></td>
           <td class="px-3 py-2 font-medium">\${esc(p.company)}</td>
           <td class="px-3 py-2"><a href="\${esc(p.url)}" target="_blank" class="hover:underline">\${esc(p.title)}</a> \${decisionPill(dec)}</td>
           <td class="px-3 py-2 text-gray-500 text-xs">\${esc(p.first_seen || '')}</td>
+          <td class="px-3 py-2">\${evalBtn}</td>
           <td class="px-3 py-2">
             <div class="flex gap-1 text-xs">
               <button data-d="interested" title="Interested" class="px-2 py-1 rounded \${dec==='interested'?'bg-emerald-600 text-white':'bg-gray-100 hover:bg-emerald-100'}">👍</button>
@@ -642,7 +662,112 @@ function renderPipeline() {
         renderPipeline();
       });
     });
+    const evBtn = tr.querySelector('[data-eval]');
+    if (evBtn) evBtn.addEventListener('click', () => evaluateRow(tr.dataset));
   });
+}
+
+// -- Evaluate via /api/evaluate --------------------------------------------
+const EVAL_CACHE_KEY = 'careerops:evals:v1';
+function loadEvalCache() {
+  try { return JSON.parse(localStorage.getItem(EVAL_CACHE_KEY) || '{}'); } catch { return {}; }
+}
+function saveEval(url, result) {
+  const c = loadEvalCache();
+  c[url] = { ...result, ts: new Date().toISOString() };
+  localStorage.setItem(EVAL_CACHE_KEY, JSON.stringify(c));
+  D.evalCache = c;
+}
+// Boot the cache from localStorage so cached badges render on first paint
+D.evalCache = loadEvalCache();
+
+const EV_MODAL = document.getElementById('ev-modal');
+function openEvalModal() { EV_MODAL.classList.remove('hidden'); }
+window.closeEvalModal = function() { EV_MODAL.classList.add('hidden'); };
+
+function recColor(rec) {
+  if (rec === 'apply') return 'bg-emerald-100 text-emerald-800';
+  if (rec === 'maybe') return 'bg-amber-100 text-amber-800';
+  return 'bg-gray-100 text-gray-700';
+}
+
+function renderEvalResult(target) {
+  const body = document.getElementById('ev-body');
+  body.innerHTML = \`
+    <div class="flex flex-wrap gap-3 items-center mb-4">
+      <span class="pill \${fitColor(target.match_score)}" style="font-size:1rem;padding:6px 14px">Score \${target.match_score}/100</span>
+      <span class="pill \${recColor(target.recommendation)}" style="font-size:0.9rem;padding:4px 10px">\${target.recommendation.toUpperCase()}</span>
+      <span class="pill pill-status">\${esc(target.archetype || '')}</span>
+      <span class="pill pill-status">Legitimacy: \${esc(target.block_g_legitimacy || '')}</span>
+    </div>
+    <p class="mb-4 text-gray-800 italic">"\${esc(target.tldr || '')}"</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+      <div class="bg-emerald-50 border border-emerald-200 rounded p-3">
+        <div class="text-xs font-semibold text-emerald-800 uppercase mb-1">Strengths</div>
+        <ul class="text-sm space-y-1">\${(target.strengths || []).map(s => '<li>• ' + esc(s) + '</li>').join('')}</ul>
+      </div>
+      <div class="bg-red-50 border border-red-200 rounded p-3">
+        <div class="text-xs font-semibold text-red-800 uppercase mb-1">Concerns</div>
+        <ul class="text-sm space-y-1">\${(target.concerns || []).map(s => '<li>• ' + esc(s) + '</li>').join('')}</ul>
+      </div>
+    </div>
+
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block A — Role Summary</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_a_role_summary || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block B — CV Match</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_b_cv_match || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block C — Gaps & Mitigation</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_c_gaps || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block D — Interview Difficulty</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_d_interview_difficulty || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block E — Cover Letter Draft</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_e_cover_letter_draft || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block G — Posting Legitimacy</summary><div class="markdown text-sm pl-4">\${esc(target.block_g_legitimacy_reasoning || '')}</div></details>
+
+    <div class="text-xs text-gray-500 mt-4">
+      Evaluated \${esc((target.ts || '').slice(0, 16).replace('T', ' '))} via Claude.
+      \${target.usage ? \`<span class="ml-2">tokens: in=\${target.usage.input} cache_r=\${target.usage.cache_read} out=\${target.usage.output}</span>\` : ''}
+    </div>\`;
+}
+
+async function evaluateRow(rowData) {
+  const { url, company, title } = rowData;
+  document.getElementById('ev-title').textContent = company + ' — ' + title;
+  document.getElementById('ev-subtitle').innerHTML = \`<a href="\${esc(url)}" target="_blank" class="text-blue-600 underline">\${esc(url)}</a>\`;
+  openEvalModal();
+
+  const cached = loadEvalCache()[url];
+  if (cached) {
+    renderEvalResult(cached);
+    return;
+  }
+
+  document.getElementById('ev-body').innerHTML = \`
+    <div class="py-8 text-center text-gray-600">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-700 mb-3"></div>
+      <p class="text-sm font-medium">Calling Claude (Opus 4.7) — fetching JD, scoring against your profile…</p>
+      <p class="text-xs text-gray-500 mt-2">Typically 15–40 seconds. First call writes cache; later calls are faster.</p>
+    </div>\`;
+
+  try {
+    const r = await fetch('/api/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, company, title }),
+    });
+    const j = await r.json();
+    if (!r.ok) {
+      let helper = '';
+      if (/ANTHROPIC_API_KEY/.test(j.error || '')) {
+        helper = '<p class="mt-3">Add <code class="bg-gray-100 px-1">ANTHROPIC_API_KEY</code> to Vercel: Project → Settings → Environment Variables. Get a key at <a class="underline" href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> ($5 free credit).</p>';
+      }
+      document.getElementById('ev-body').innerHTML =
+        \`<div class="bg-red-50 border border-red-200 rounded p-4 text-red-800 text-sm"><b>Evaluation failed.</b><p class="mt-2 font-mono text-xs">\${esc(j.error || 'unknown error')}</p>\${helper}</div>\`;
+      return;
+    }
+    saveEval(url, j);
+    renderEvalResult(j);
+    renderPipeline();
+  } catch (err) {
+    document.getElementById('ev-body').innerHTML =
+      \`<div class="bg-red-50 border border-red-200 rounded p-4 text-red-800 text-sm"><b>Network error.</b><p class="mt-2 font-mono text-xs">\${esc(err.message || String(err))}</p><p class="mt-2 text-xs">If you opened the dashboard locally (file:// or :3000), the API call has nowhere to go. Open the deployed Vercel URL.</p></div>\`;
+  }
 }
 
 function setupPipelineFilters() {
