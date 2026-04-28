@@ -18,6 +18,7 @@ All scripts live in the project root as `.mjs` modules and are exposed via `npm 
 | `npm run rollback` | `update-system.mjs rollback` | Rollback last update |
 | `npm run liveness` | `check-liveness.mjs` | Test if job URLs are still active |
 | `npm run scan` | `scan.mjs` | Zero-token portal scanner |
+| `npm run tailor` | `tailored-workflow.mjs` | Build tailored job board + CV optimizer + application pack |
 
 ---
 
@@ -187,3 +188,29 @@ npm run scan
 ```
 
 **Exit codes:** `0` scan completed, `1` configuration error or no portals.yml found.
+
+---
+
+## tailor
+
+End-to-end helper that stitches together the existing pipeline into one practical flow:
+
+1) optional portal scan, 2) ranked tailored board from `data/pipeline.md`, 3) JD keyword extraction for one selected role, 4) CV coverage analysis against `cv.md`, 5) generation of an application answer pack.
+
+```bash
+npm run tailor
+npm run tailor -- --scan
+npm run tailor -- --top=25 --job=1
+npm run tailor -- --job=https://job-boards.greenhouse.io/example/jobs/123
+```
+
+Outputs in `output/`:
+- `tailored-job-board.md`
+- `cv-optimizer-{company}-{role}.md`
+- `applier-pack-{company}-{role}.md`
+
+Safety behavior:
+- Never submits applications.
+- Generates preparation assets only; final submit remains manual.
+
+**Exit codes:** `0` success, `1` missing prerequisites or fetch/processing failures.
