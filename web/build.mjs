@@ -355,6 +355,7 @@ const html = `<!doctype html>
     <button data-tab="profile" class="tab px-4 py-2 rounded-md text-sm font-medium">Profile</button>
     <button data-tab="reports" class="tab px-4 py-2 rounded-md text-sm font-medium">Reports <span id="rp-count" class="ml-1 text-xs opacity-75"></span></button>
     <button data-tab="gmail" class="tab px-4 py-2 rounded-md text-sm font-medium">Gmail <span id="gm-count" class="ml-1 text-xs opacity-75"></span></button>
+    <button data-tab="log" class="tab px-4 py-2 rounded-md text-sm font-medium">Status Log <span id="lg-count" class="ml-1 text-xs opacity-75"></span></button>
   </nav>
 
   <main>
@@ -455,6 +456,59 @@ const html = `<!doctype html>
       <div class="bg-white rounded-lg shadow-sm p-5">
         <ul id="rp-list" class="divide-y"></ul>
         <p id="rp-empty" class="text-sm text-gray-500 hidden">No reports yet.</p>
+      </div>
+    </section>
+
+    <!-- Status Log -->
+    <section data-section="log" class="hidden">
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <h3 class="font-semibold mb-2">Add status update</h3>
+        <p class="text-xs text-gray-600 mb-3">Manual notes after submitting an application — saved per-device. For shared persistence, save the report to repo and let Gmail sync watch for replies.</p>
+        <form id="lg-form" class="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <select id="lg-app" class="border rounded px-2 py-1.5 text-sm md:col-span-2"><option value="">— pick application —</option></select>
+          <select id="lg-status" class="border rounded px-2 py-1.5 text-sm">
+            <option value="Applied">Applied</option>
+            <option value="Followup1">Follow-up 1</option>
+            <option value="Followup2">Follow-up 2</option>
+            <option value="Responded">Responded</option>
+            <option value="Phone Screen">Phone Screen</option>
+            <option value="Interview">Interview</option>
+            <option value="Offer">Offer</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Withdrawn">Withdrawn</option>
+            <option value="Note">Note (no status change)</option>
+          </select>
+          <button type="submit" class="bg-gray-900 text-white text-sm px-3 py-1.5 rounded">Log entry</button>
+          <input id="lg-note" type="text" placeholder="Optional note (recruiter name, follow-up question, etc.)" class="border rounded px-2 py-1.5 text-sm md:col-span-4" />
+        </form>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-4 flex flex-wrap gap-3 items-center">
+        <input id="lg-search" type="search" placeholder="Search log…" class="border rounded-md px-3 py-2 text-sm flex-1 min-w-[200px]" />
+        <select id="lg-source" class="border rounded-md px-3 py-2 text-sm">
+          <option value="">All sources</option>
+          <option value="manual">Manual</option>
+          <option value="gmail">Gmail</option>
+          <option value="decision">Decision</option>
+          <option value="evaluation">Evaluation</option>
+        </select>
+        <button id="lg-export" class="bg-gray-900 text-white text-xs px-3 py-1.5 rounded">Export TSV</button>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 text-left">
+            <tr>
+              <th class="px-3 py-2 w-36">When</th>
+              <th class="px-3 py-2 w-20">Source</th>
+              <th class="px-3 py-2 w-28">Status</th>
+              <th class="px-3 py-2">Application</th>
+              <th class="px-3 py-2">Note / Subject</th>
+            </tr>
+          </thead>
+          <tbody id="lg-rows"></tbody>
+        </table>
+        <p id="lg-empty" class="text-center text-sm text-gray-500 py-8 hidden">
+          No log entries yet. As you Save reports to the repo and Gmail picks up replies, events will accumulate here.
+        </p>
       </div>
     </section>
 
@@ -691,8 +745,9 @@ function recColor(rec) {
   return 'bg-gray-100 text-gray-700';
 }
 
-function renderEvalResult(target) {
+function renderEvalResult(target, rowData) {
   const body = document.getElementById('ev-body');
+  const saved = !!target.savedToRepo;
   body.innerHTML = \`
     <div class="flex flex-wrap gap-3 items-center mb-4">
       <span class="pill \${fitColor(target.match_score)}" style="font-size:1rem;padding:6px 14px">Score \${target.match_score}/100</span>
@@ -701,6 +756,13 @@ function renderEvalResult(target) {
       <span class="pill pill-status">Legitimacy: \${esc(target.block_g_legitimacy || '')}</span>
     </div>
     <p class="mb-4 text-gray-800 italic">"\${esc(target.tldr || '')}"</p>
+
+    <div class="flex flex-wrap gap-2 mb-5 pb-5 border-b">
+      <button id="ev-save" class="bg-emerald-600 text-white text-sm px-4 py-2 rounded hover:bg-emerald-700 disabled:opacity-50" \${saved ? 'disabled' : ''}>\${saved ? '✓ Saved to repo' : 'Save report to repo'}</button>
+      <button id="ev-tailor" class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700">Tailor my CV for this role</button>
+      <button id="ev-applied" class="bg-gray-900 text-white text-sm px-4 py-2 rounded hover:bg-gray-700">Mark as applied</button>
+    </div>
+    <p id="ev-action-status" class="text-sm text-gray-500 mb-4"></p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
       <div class="bg-emerald-50 border border-emerald-200 rounded p-3">
@@ -724,6 +786,141 @@ function renderEvalResult(target) {
       Evaluated \${esc((target.ts || '').slice(0, 16).replace('T', ' '))} via Claude.
       \${target.usage ? \`<span class="ml-2">tokens: in=\${target.usage.input} cache_r=\${target.usage.cache_read} out=\${target.usage.output}</span>\` : ''}
     </div>\`;
+
+  // Wire action buttons
+  document.getElementById('ev-save').addEventListener('click', () => saveReport(target, rowData));
+  document.getElementById('ev-tailor').addEventListener('click', () => tailorCV(target, rowData));
+  document.getElementById('ev-applied').addEventListener('click', () => {
+    saveDecision(rowData.url, 'applied');
+    setActionStatus('Marked as applied. Decision saved locally — Gmail sync will track replies once configured.');
+    renderPipeline();
+  });
+}
+
+function setActionStatus(msg, isError = false) {
+  const el = document.getElementById('ev-action-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'text-sm mb-4 ' + (isError ? 'text-red-700' : 'text-gray-600');
+}
+
+async function saveReport(target, rowData) {
+  setActionStatus('Saving to GitHub…');
+  const btn = document.getElementById('ev-save');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/save-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eval: target, url: rowData.url, company: rowData.company, title: rowData.title }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    setActionStatus('✓ Committed report #' + j.num + ' and updated applications.md. Vercel will redeploy in ~30s.');
+    btn.textContent = '✓ Saved to repo';
+    target.savedToRepo = true;
+    saveEval(rowData.url, target);
+  } catch (err) {
+    setActionStatus('Save failed: ' + err.message + '. Need GITHUB_TOKEN + GITHUB_REPO env vars on Vercel — see ORCHESTRATOR.md.', true);
+    btn.disabled = false;
+  }
+}
+
+async function tailorCV(target, rowData) {
+  setActionStatus('Tailoring CV (15-30s)…');
+  const btn = document.getElementById('ev-tailor');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/tailor-cv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: rowData.url, company: rowData.company, title: rowData.title,
+        archetype: target.archetype, evalResult: target,
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    setActionStatus('✓ Tailored. Notes: ' + (j.tailored?.notes || ''));
+    showTailoredCV(j, rowData);
+  } catch (err) {
+    setActionStatus('Tailor failed: ' + err.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showTailoredCV(result, rowData) {
+  const body = document.getElementById('ev-body');
+  const fileBase = 'cv-' + (rowData.company || 'role').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
+  const wrap = document.createElement('div');
+  wrap.className = 'mt-6 pt-6 border-t';
+  wrap.innerHTML = \`
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold">Tailored CV (editable)</h3>
+      <div class="flex gap-1">
+        <button id="cv-download-md" class="bg-emerald-600 text-white text-xs px-3 py-1.5 rounded hover:bg-emerald-700">Download .md</button>
+        <button id="cv-download-html" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded hover:bg-blue-700">Download .html</button>
+        <button id="cv-copy" class="bg-gray-700 text-white text-xs px-3 py-1.5 rounded hover:bg-gray-900">Copy</button>
+        <button id="cv-revert" class="bg-gray-200 text-gray-800 text-xs px-3 py-1.5 rounded hover:bg-gray-300">Revert</button>
+      </div>
+    </div>
+    <div class="bg-amber-50 border border-amber-200 rounded p-3 mb-3 text-xs text-amber-800">
+      <b>Tailoring notes:</b> \${esc(result.tailored?.notes || '')}
+      <br><b>Tip:</b> Edit the markdown on the left — the preview on the right updates live. Then export.
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" style="height:560px">
+      <textarea id="cv-edit" class="border rounded p-3 font-mono text-xs resize-none w-full" spellcheck="false"></textarea>
+      <div id="cv-preview" class="border rounded bg-white p-4 markdown text-sm overflow-y-auto"></div>
+    </div>\`;
+  body.appendChild(wrap);
+
+  const ta = document.getElementById('cv-edit');
+  const preview = document.getElementById('cv-preview');
+  const original = result.markdown;
+  ta.value = original;
+  function rerender() {
+    preview.innerHTML = marked.parse(ta.value);
+  }
+  rerender();
+  ta.addEventListener('input', rerender);
+
+  function downloadBlob(content, mime, name) {
+    const url = URL.createObjectURL(new Blob([content], { type: mime }));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  document.getElementById('cv-download-md').addEventListener('click', () => {
+    downloadBlob(ta.value, 'text/markdown', fileBase + '.md');
+  });
+  document.getElementById('cv-download-html').addEventListener('click', () => {
+    const inner = marked.parse(ta.value);
+    const html = \`<!doctype html><html><head><meta charset="utf-8"><title>\${esc(fileBase)}</title>
+<style>
+body{font-family:Georgia,'Iowan Old Style',serif;max-width:780px;margin:40px auto;padding:0 24px;color:#222;line-height:1.45}
+h1{font-size:1.9rem;margin:0 0 6px;border:0}
+h2{font-size:1.15rem;font-weight:700;margin:1.4rem 0 .4rem;border-bottom:1px solid #aaa;padding-bottom:2px;text-transform:uppercase;letter-spacing:.5px}
+h3{font-size:1rem;margin:.9rem 0 .15rem;font-weight:700}
+p{margin:.4rem 0}
+ul{margin:.3rem 0 .3rem 1.2rem;padding:0}
+li{margin-bottom:.18rem}
+em{color:#555;font-style:italic}
+a{color:#1a4fa3;text-decoration:none}
+@media print{body{margin:0;padding:0 .5in;font-size:11pt}h1{font-size:1.6rem}}
+</style></head><body>\${inner}<p style="text-align:center;color:#999;font-size:11px;margin-top:32px">Tailored \${new Date().toLocaleDateString()} · \${esc(rowData.company || '')} \${esc(rowData.title || '')}</p></body></html>\`;
+    downloadBlob(html, 'text/html', fileBase + '.html');
+    setActionStatus('Downloaded .html — open it and use your browser\\'s "Save as PDF" via Ctrl+P / Cmd+P.');
+  });
+  document.getElementById('cv-copy').addEventListener('click', async () => {
+    await navigator.clipboard.writeText(ta.value);
+    setActionStatus('Copied tailored CV markdown to clipboard.');
+  });
+  document.getElementById('cv-revert').addEventListener('click', () => {
+    if (ta.value !== original && !confirm('Revert your edits to the original tailored output?')) return;
+    ta.value = original; rerender();
+  });
 }
 
 async function evaluateRow(rowData) {
@@ -734,7 +931,7 @@ async function evaluateRow(rowData) {
 
   const cached = loadEvalCache()[url];
   if (cached) {
-    renderEvalResult(cached);
+    renderEvalResult(cached, rowData);
     return;
   }
 
@@ -762,7 +959,7 @@ async function evaluateRow(rowData) {
       return;
     }
     saveEval(url, j);
-    renderEvalResult(j);
+    renderEvalResult(j, rowData);
     renderPipeline();
   } catch (err) {
     document.getElementById('ev-body').innerHTML =
@@ -877,6 +1074,145 @@ function renderGmail() {
   }
 }
 renderGmail();
+
+// -- Status Log tab --
+const STATUS_LOG_KEY = 'careerops:statuslog:v1';
+function loadStatusLog() {
+  try { return JSON.parse(localStorage.getItem(STATUS_LOG_KEY) || '[]'); } catch { return []; }
+}
+function saveStatusLog(arr) {
+  localStorage.setItem(STATUS_LOG_KEY, JSON.stringify(arr));
+}
+
+function buildLogEvents() {
+  const out = [];
+  // Manual entries from localStorage
+  for (const e of loadStatusLog()) {
+    out.push({ ts: e.ts, source: 'manual', status: e.status, app: e.app, note: e.note || '' });
+  }
+  // Decisions from localStorage (👍👎✓✗ on pipeline rows)
+  const decisions = loadDecisions();
+  for (const [url, d] of Object.entries(decisions)) {
+    const p = D.pipeline.find(x => x.url === url);
+    out.push({
+      ts: d.ts, source: 'decision', status: d.decision,
+      app: p ? \`\${p.company} — \${p.title}\` : url,
+      note: '',
+    });
+  }
+  // Evaluations from localStorage
+  for (const [url, ev] of Object.entries(D.evalCache || {})) {
+    const p = D.pipeline.find(x => x.url === url);
+    out.push({
+      ts: ev.ts, source: 'evaluation',
+      status: 'Evaluated (' + (ev.match_score || 0) + ')',
+      app: p ? \`\${p.company} — \${p.title}\` : url,
+      note: ev.tldr || '',
+    });
+  }
+  // Gmail sync events
+  for (const e of D.gmailEvents || []) {
+    if (!e.detected || e.action === 'no-match') continue;
+    out.push({
+      ts: e.ts, source: 'gmail',
+      status: e.new_status || e.detected,
+      app: e.company ? \`\${e.company}\${e.role ? ' — ' + e.role : ''}\` : '(unmatched)',
+      note: e.subject || '',
+    });
+  }
+  // Applications.md current status snapshot
+  for (const a of D.applications || []) {
+    out.push({
+      ts: a.date + 'T00:00:00Z', source: 'tracker',
+      status: a.status,
+      app: \`#\${a.num} \${a.company} — \${a.role}\`,
+      note: a.notes || '',
+    });
+  }
+  out.sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+  return out;
+}
+
+function renderStatusLog() {
+  const events = buildLogEvents();
+  const search = (document.getElementById('lg-search')?.value || '').toLowerCase();
+  const source = document.getElementById('lg-source')?.value || '';
+  const filtered = events.filter(e => {
+    if (source && e.source !== source) return false;
+    if (search && !((e.app + ' ' + e.note + ' ' + e.status).toLowerCase().includes(search))) return false;
+    return true;
+  });
+  document.getElementById('lg-count').textContent = '(' + events.length + ')';
+  const empty = document.getElementById('lg-empty');
+  const tbody = document.getElementById('lg-rows');
+  if (filtered.length === 0) {
+    empty.classList.remove('hidden');
+    tbody.innerHTML = '';
+    return;
+  }
+  empty.classList.add('hidden');
+  const colorBySource = {
+    manual: 'bg-purple-100 text-purple-800',
+    gmail: 'bg-amber-100 text-amber-800',
+    decision: 'bg-blue-100 text-blue-800',
+    evaluation: 'bg-emerald-100 text-emerald-800',
+    tracker: 'bg-gray-100 text-gray-700',
+  };
+  tbody.innerHTML = filtered.map(e => \`
+    <tr class="border-t hover:bg-gray-50">
+      <td class="px-3 py-2 text-xs text-gray-500">\${esc((e.ts || '').replace('T', ' ').slice(0, 16))}</td>
+      <td class="px-3 py-2"><span class="pill \${colorBySource[e.source] || 'pill-status'}">\${esc(e.source)}</span></td>
+      <td class="px-3 py-2"><span class="pill pill-status">\${esc(e.status || '')}</span></td>
+      <td class="px-3 py-2 font-medium">\${esc(e.app)}</td>
+      <td class="px-3 py-2 text-gray-600">\${esc(e.note)}</td>
+    </tr>\`).join('');
+}
+
+function setupStatusLogForm() {
+  const sel = document.getElementById('lg-app');
+  const apps = [];
+  // Pull options from applications + interested-pipeline rows
+  for (const a of D.applications || []) {
+    apps.push({ value: a.company + ' — ' + a.role, label: \`#\${a.num} \${a.company} — \${a.role}\` });
+  }
+  const decisions = loadDecisions();
+  for (const url of Object.keys(decisions)) {
+    const p = D.pipeline.find(x => x.url === url);
+    if (!p) continue;
+    apps.push({ value: p.company + ' — ' + p.title, label: p.company + ' — ' + p.title });
+  }
+  const seen = new Set();
+  const opts = apps.filter(a => { if (seen.has(a.value)) return false; seen.add(a.value); return true; });
+  sel.innerHTML = '<option value="">— pick application —</option>' + opts.map(o => \`<option value="\${esc(o.value)}">\${esc(o.label)}</option>\`).join('');
+
+  document.getElementById('lg-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const app = sel.value;
+    const status = document.getElementById('lg-status').value;
+    const note = document.getElementById('lg-note').value;
+    if (!app) { alert('Pick an application first.'); return; }
+    const log = loadStatusLog();
+    log.push({ ts: new Date().toISOString(), app, status, note });
+    saveStatusLog(log);
+    document.getElementById('lg-note').value = '';
+    renderStatusLog();
+  });
+
+  ['lg-search', 'lg-source'].forEach(id => document.getElementById(id).addEventListener('input', renderStatusLog));
+  document.getElementById('lg-export').addEventListener('click', () => {
+    const events = buildLogEvents();
+    const tsv = ['ts\\tsource\\tstatus\\tapplication\\tnote'].concat(
+      events.map(e => [e.ts, e.source, e.status, e.app, (e.note || '').replace(/\\t/g, ' ')].join('\\t'))
+    ).join('\\n');
+    const url = URL.createObjectURL(new Blob([tsv + '\\n'], { type: 'text/tab-separated-values' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'status-log.tsv'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+}
+
+setupStatusLogForm();
+renderStatusLog();
 
 // Initial render
 renderOverview();
