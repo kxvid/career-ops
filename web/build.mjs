@@ -24,6 +24,8 @@ const applicationsMd = readOpt('data/applications.md');
 const pipelineMd = readOpt('data/pipeline.md');
 const scanHistoryTsv = readOpt('data/scan-history.tsv');
 const profileMd = readOpt('modes/_profile.md');
+const gmailStateJson = readOpt('data/gmail-state.json');
+const gmailEventsTsv = readOpt('data/gmail-events.tsv');
 
 const profile = profileYml ? yaml.load(profileYml) : {};
 
@@ -85,6 +87,198 @@ for (const item of pipeline) {
   }
 }
 
+// -- Gmail state + recent events --
+let gmailState = null;
+try { gmailState = gmailStateJson ? JSON.parse(gmailStateJson) : null; } catch { gmailState = null; }
+
+function parseGmailEvents(tsv) {
+  const lines = tsv.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split('\t');
+  return lines.slice(1).map(l => {
+    const cells = l.split('\t');
+    const o = {};
+    headers.forEach((h, i) => { o[h] = cells[i] || ''; });
+    return o;
+  }).reverse(); // newest first
+}
+const gmailEvents = parseGmailEvents(gmailEventsTsv);
+
+// -- Fit scoring ------------------------------------------------------------
+// Deterministic, archetype-driven. 0-100. See README for weights.
+const ARCHETYPE_KEYWORDS = {
+  'IT Systems / Infrastructure Engineer': {
+    pos: ['it systems', 'infrastructure', 'sysadmin', 'system administrator', 'endpoint', 'corporate it', 'enterprise it', 'site reliability', 'sre ', 'reliability engineer', 'corporate engineer', 'business systems'],
+    weight: 1.0,
+  },
+  'Cloud Engineer (Azure Gov / AWS / M365)': {
+    pos: ['cloud engineer', 'cloud infrastructure', 'cloud operations', 'cloudops', 'cloud architect', 'azure', 'aws engineer', 'gcp engineer', 'public sector', 'govcloud', 'federal'],
+    weight: 1.0,
+  },
+  'Cybersecurity / Compliance Engineer (CMMC, NIST, GRC)': {
+    pos: ['security engineer', 'cybersecurity', 'cyber security', 'information security', 'infosec', 'secops', 'security operations', 'detection', 'compliance', 'grc', 'governance risk', 'risk engineer', 'audit', 'cmmc', 'nist', 'fedramp', 'zero trust', 'security architect', 'vulnerability', 'application security', 'product security', 'cloud security', 'platform security', 'corporate security'],
+    weight: 1.0,
+  },
+  'Identity & Access Management Engineer': {
+    pos: ['iam ', 'identity engineer', 'identity & access', 'identity and access', 'access management', 'okta', 'sso', 'single sign-on', 'pam ', 'privileged access'],
+    weight: 0.85,
+  },
+  'DevOps / Platform Engineer': {
+    pos: ['devops', 'platform engineer', 'reliability', 'observability', 'kubernetes', 'k8s'],
+    weight: 0.6,
+  },
+  'Data / Analytics Engineer (Snowflake/SQL)': {
+    pos: ['data engineer', 'analytics engineer', 'snowflake'],
+    weight: 0.5,
+  },
+  'Solutions / Customer Engineer (Technical)': {
+    pos: ['solutions engineer', 'solutions architect', 'forward deployed', 'customer engineer', 'implementation engineer', 'technical account manager', 'deployed engineer'],
+    weight: 0.6,
+  },
+};
+
+const SKILL_TOKENS = [
+  'aws', 'azure', 'gcp', 'm365', 'microsoft 365', 'gcc high', 'snowflake', 'sql',
+  'python', 'powershell', 'okta', 'duo', 'beyondtrust', 'crowdstrike', 'splunk',
+  'sumologic', 'tenable', 'tanium', 'sccm', 'active directory', 'cisco', 'vlan',
+  'cmmc', 'nist', 'fedramp', 'dfars', 'cui', 'zero trust', 'salesforce',
+  'servicenow', 'tableau', 'power bi', 'rpa', 'uipath', 'ansible', 'terraform',
+  'docker', 'kubernetes', 'github', 'gitlab', 'jenkins', 'circleci',
+];
+
+const TARGET_METROS_TOKENS = [
+  'remote', 'united states', 'usa', ' u.s.', ' us ',
+  'los angeles', 'la,', 'orange county', 'irvine', 'san diego', 'san francisco',
+  'sf,', 'bay area', 'palo alto', 'menlo park', 'mountain view', 'sunnyvale',
+  'santa clara', 'cupertino', 'fremont',
+  'seattle', 'redmond', 'bellevue',
+  'new york', 'nyc', 'manhattan', 'brooklyn',
+  'austin', 'dallas', 'houston', 'plano', 'frisco',
+  'miami', 'tampa', 'orlando', 'jacksonville',
+];
+
+const NON_TARGET_METROS = [
+  'london', 'berlin', 'paris', 'amsterdam', 'lisbon', 'munich', 'dublin',
+  'madrid', 'barcelona', 'milan', 'rome', 'stockholm', 'copenhagen', 'brussels',
+  'tokyo', 'osaka', 'seoul', 'singapore', 'hong kong', 'shanghai', 'shenzhen',
+  'sydney', 'melbourne', 'canberra', 'tel aviv',
+  'bangalore', 'bengaluru', 'hyderabad', 'pune', 'mumbai', 'delhi', 'chennai',
+  'mexico city', 'são paulo', 'sao paulo', 'buenos aires',
+  'toronto', 'montreal', 'vancouver', 'ottawa',
+  'india', 'japan', 'korea', 'china', 'germany', 'france', 'spain', 'italy',
+  'netherlands', 'australia', 'canada',
+];
+
+const SENIORITY_BAD = [
+  /\bengineering manager\b/i, /\bmanager,/i, /\bmanager of\b/i, /\bdirector,/i,
+  /\bdirector of\b/i, /\bhead of\b/i, /\bvp,/i, /\bvp /i, /\bvice president\b/i,
+  /\bdistinguished\b/i, /\bfellow engineer\b/i, /\bprincipal\b/i, /\bstaff\b/i,
+];
+
+const SENIORITY_GREAT = [/\bmid\b/i, /\bsenior\b/i, /\bii\b/i, /\biii\b/i];
+const SENIORITY_TOO_LOW = [/\bjunior\b/i, /\bnew[- ]grad\b/i, /\bintern(ship)?\b/i, /\bassociate\b/i];
+
+const NEGATIVE_TITLES = [
+  /\bmachine learning engineer\b/i, /\bml engineer\b/i, /\bdeep learning\b/i,
+  /\bnlp engineer\b/i, /\bresearch (scientist|engineer|er)\b/i, /\bresearcher\b/i,
+  /\bapplied scientist\b/i, /\bdata scientist\b/i, /\bquant\b/i,
+  /\bios\b/i, /\bandroid\b/i, /\bmobile (developer|engineer)\b/i,
+  /\bfront[- ]?end\b/i, /\bui engineer\b/i, /\bgame\b/i,
+  /\bembedded\b/i, /\bfirmware\b/i, /\brf engineer\b/i,
+  /\b(russian|korean|mandarin|cantonese|japanese|czech|polish|ukrainian|portuguese|italian|spanish|dutch|german|french)\s+(speaker|speaking)\b/i,
+];
+
+const TIER1_BRANDS = new Set(['Anthropic', 'OpenAI', 'xAI', 'Anduril', 'Palantir', 'Shield AI', 'Microsoft', 'Amazon / AWS', 'Google', 'Apple', 'Meta', 'Cloudflare', 'Stripe', 'CrowdStrike', 'Okta', 'Wiz', 'Snowflake', 'Databricks']);
+
+const FED_KEYWORDS = ['us government', 'federal', 'public sector', 'cmmc', 'nist', 'fedramp', 'dod', 'department of defense', 'defense', 'cleared'];
+const DEFENSE_COMPANIES = new Set(['Anduril', 'Palantir', 'Shield AI', 'Saronic', 'Vannevar Labs', 'Skydio', 'Rebellion Defense', 'Saildrone', 'Hadrian', 'Lockheed Martin', 'Northrop Grumman', 'RTX (Raytheon)', 'General Dynamics', 'L3Harris', 'Booz Allen Hamilton', 'Leidos', 'SAIC']);
+
+// Convert a token list into word-boundary regex patterns. Phrases use \b at
+// start/end only. Handles tokens with hyphens, spaces, dots, ampersands.
+function compileTokens(tokens) {
+  return tokens.map(t => {
+    const escaped = t.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`, 'i');
+  });
+}
+
+const ARCHETYPE_REGEX = Object.fromEntries(
+  Object.entries(ARCHETYPE_KEYWORDS).map(([name, def]) => [name, { regex: compileTokens(def.pos), weight: def.weight }])
+);
+const SKILL_REGEX = compileTokens(SKILL_TOKENS);
+const FED_REGEX = compileTokens(FED_KEYWORDS);
+const TARGET_METROS_REGEX = compileTokens(TARGET_METROS_TOKENS.map(t => t.replace(/^\s+|\s+$/g, '').replace(/,$/, '')));
+const NON_TARGET_METROS_REGEX = compileTokens(NON_TARGET_METROS);
+
+function scoreListing(item) {
+  const title = (item.title || '');
+  let score = 0;
+  let factors = {};
+
+  // Archetype match — primary signal
+  let archMax = 0;
+  let archHit = '';
+  let archHitTokens = [];
+  for (const [name, def] of Object.entries(ARCHETYPE_REGEX)) {
+    const hits = def.regex.filter(r => r.test(title));
+    if (hits.length > 0) {
+      const v = Math.min(55, hits.length * 18) * def.weight;
+      if (v > archMax) { archMax = v; archHit = name; archHitTokens = hits.map(r => r.source); }
+    }
+  }
+  score += archMax;
+  factors.archetype = { score: archMax, match: archHit, hits: archHitTokens };
+
+  // Skills overlap
+  const skillHits = SKILL_REGEX.filter(r => r.test(title)).length;
+  const skillScore = Math.min(20, skillHits * 5);
+  score += skillScore;
+  factors.skills = { score: skillScore, hits: skillHits };
+
+  // Seniority
+  let senScore = 0;
+  if (SENIORITY_BAD.some(re => re.test(title))) senScore -= 40;
+  else if (SENIORITY_TOO_LOW.some(re => re.test(title))) senScore -= 35;
+  else if (SENIORITY_GREAT.some(re => re.test(title))) senScore += 6;
+  score += senScore;
+  factors.seniority = { score: senScore };
+
+  // Location (often missing from title — only bonus/penalty if explicit)
+  let locScore = 0;
+  if (TARGET_METROS_REGEX.some(r => r.test(title))) locScore += 10;
+  if (NON_TARGET_METROS_REGEX.some(r => r.test(title))) locScore -= 35;
+  score += locScore;
+  factors.location = { score: locScore };
+
+  // Federal / clearance bonus
+  let fedScore = 0;
+  if (FED_REGEX.some(r => r.test(title))) fedScore += 10;
+  if (DEFENSE_COMPANIES.has(item.company)) fedScore += 8;
+  score += fedScore;
+  factors.federal = { score: fedScore };
+
+  // Negative keywords (catches what filter missed)
+  let negScore = 0;
+  for (const re of NEGATIVE_TITLES) if (re.test(title)) negScore -= 35;
+  negScore = Math.max(-60, negScore);
+  score += negScore;
+  factors.negatives = { score: negScore };
+
+  // Brand bonus
+  let brand = 0;
+  if (TIER1_BRANDS.has(item.company)) brand += 10;
+  score += brand;
+  factors.brand = { score: brand };
+
+  return { score: Math.max(0, Math.min(100, Math.round(score))), factors };
+}
+
+for (const item of pipeline) {
+  const { score, factors } = scoreListing(item);
+  item.fit = score;
+  item.fit_factors = factors;
+}
+
 // -- Reports list --
 let reports = [];
 const reportsDir = path.join(root, 'reports');
@@ -103,6 +297,8 @@ const data = {
   applications,
   pipeline,
   reports,
+  gmailState,
+  gmailEvents: gmailEvents.slice(0, 50),
   builtAt: new Date().toISOString(),
 };
 
@@ -159,6 +355,8 @@ const html = `<!doctype html>
     <button data-tab="cv" class="tab px-4 py-2 rounded-md text-sm font-medium">CV</button>
     <button data-tab="profile" class="tab px-4 py-2 rounded-md text-sm font-medium">Profile</button>
     <button data-tab="reports" class="tab px-4 py-2 rounded-md text-sm font-medium">Reports <span id="rp-count" class="ml-1 text-xs opacity-75"></span></button>
+    <button data-tab="gmail" class="tab px-4 py-2 rounded-md text-sm font-medium">Gmail <span id="gm-count" class="ml-1 text-xs opacity-75"></span></button>
+    <button data-tab="log" class="tab px-4 py-2 rounded-md text-sm font-medium">Status Log <span id="lg-count" class="ml-1 text-xs opacity-75"></span></button>
   </nav>
 
   <main>
@@ -185,21 +383,31 @@ const html = `<!doctype html>
 
     <!-- Pipeline -->
     <section data-section="pipeline" class="hidden">
-      <div class="bg-white rounded-lg shadow-sm p-4 mb-4 flex flex-wrap gap-3 items-center">
-        <input id="pl-search" type="search" placeholder="Search role or company…" class="border rounded-md px-3 py-2 text-sm flex-1 min-w-[200px]" />
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+        <input id="pl-search" type="search" placeholder="Search role or company…" class="border rounded-md px-3 py-2 text-sm" />
         <select id="pl-company" class="border rounded-md px-3 py-2 text-sm"></select>
-        <label class="text-sm flex items-center gap-2"><input type="checkbox" id="pl-us-only" /> US only</label>
-        <label class="text-sm flex items-center gap-2"><input type="checkbox" id="pl-no-junior" checked /> Hide Junior/New Grad/Manager</label>
-        <span class="text-xs text-gray-500" id="pl-summary"></span>
+        <div class="flex items-center gap-2 text-sm">
+          <span class="font-medium">Min fit:</span>
+          <input type="range" id="pl-min-fit" min="0" max="100" step="5" value="40" class="flex-1" />
+          <span id="pl-min-fit-val" class="font-mono w-10 text-right">40</span>
+        </div>
+        <div class="flex flex-wrap gap-3 text-sm">
+          <label class="flex items-center gap-2"><input type="checkbox" id="pl-hide-decided" checked /> Hide decided</label>
+          <label class="flex items-center gap-2"><input type="checkbox" id="pl-us-only" /> US only</label>
+          <button id="pl-export" class="ml-auto bg-gray-900 text-white text-xs px-3 py-1.5 rounded">Export feedback (TSV)</button>
+        </div>
+        <div class="md:col-span-2 text-xs text-gray-500 flex flex-wrap gap-3" id="pl-summary"></div>
       </div>
       <div class="bg-white rounded-lg shadow-sm overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-gray-100 text-left">
             <tr>
+              <th class="px-3 py-2 w-16">Fit</th>
               <th class="px-3 py-2">Company</th>
               <th class="px-3 py-2">Title</th>
-              <th class="px-3 py-2">First seen</th>
-              <th class="px-3 py-2">Action</th>
+              <th class="px-3 py-2 w-24">First seen</th>
+              <th class="px-3 py-2 w-24">Eval</th>
+              <th class="px-3 py-2 w-44">Decision</th>
             </tr>
           </thead>
           <tbody id="pl-rows"></tbody>
@@ -275,7 +483,96 @@ const html = `<!doctype html>
         <p id="rp-empty" class="text-sm text-gray-500 hidden">No reports yet.</p>
       </div>
     </section>
+
+    <!-- Status Log -->
+    <section data-section="log" class="hidden">
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <h3 class="font-semibold mb-2">Add status update</h3>
+        <p class="text-xs text-gray-600 mb-3">Manual notes after submitting an application — saved per-device. For shared persistence, save the report to repo and let Gmail sync watch for replies.</p>
+        <form id="lg-form" class="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <select id="lg-app" class="border rounded px-2 py-1.5 text-sm md:col-span-2"><option value="">— pick application —</option></select>
+          <select id="lg-status" class="border rounded px-2 py-1.5 text-sm">
+            <option value="Applied">Applied</option>
+            <option value="Followup1">Follow-up 1</option>
+            <option value="Followup2">Follow-up 2</option>
+            <option value="Responded">Responded</option>
+            <option value="Phone Screen">Phone Screen</option>
+            <option value="Interview">Interview</option>
+            <option value="Offer">Offer</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Withdrawn">Withdrawn</option>
+            <option value="Note">Note (no status change)</option>
+          </select>
+          <button type="submit" class="bg-gray-900 text-white text-sm px-3 py-1.5 rounded">Log entry</button>
+          <input id="lg-note" type="text" placeholder="Optional note (recruiter name, follow-up question, etc.)" class="border rounded px-2 py-1.5 text-sm md:col-span-4" />
+        </form>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-4 flex flex-wrap gap-3 items-center">
+        <input id="lg-search" type="search" placeholder="Search log…" class="border rounded-md px-3 py-2 text-sm flex-1 min-w-[200px]" />
+        <select id="lg-source" class="border rounded-md px-3 py-2 text-sm">
+          <option value="">All sources</option>
+          <option value="manual">Manual</option>
+          <option value="gmail">Gmail</option>
+          <option value="decision">Decision</option>
+          <option value="evaluation">Evaluation</option>
+        </select>
+        <button id="lg-export" class="bg-gray-900 text-white text-xs px-3 py-1.5 rounded">Export TSV</button>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 text-left">
+            <tr>
+              <th class="px-3 py-2 w-36">When</th>
+              <th class="px-3 py-2 w-20">Source</th>
+              <th class="px-3 py-2 w-28">Status</th>
+              <th class="px-3 py-2">Application</th>
+              <th class="px-3 py-2">Note / Subject</th>
+            </tr>
+          </thead>
+          <tbody id="lg-rows"></tbody>
+        </table>
+        <p id="lg-empty" class="text-center text-sm text-gray-500 py-8 hidden">
+          No log entries yet. As you Save reports to the repo and Gmail picks up replies, events will accumulate here.
+        </p>
+      </div>
+    </section>
+
+    <!-- Gmail -->
+    <section data-section="gmail" class="hidden">
+      <div class="bg-white rounded-lg shadow-sm p-5 mb-4" id="gm-state"></div>
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 text-left">
+            <tr>
+              <th class="px-3 py-2">When</th>
+              <th class="px-3 py-2">Company</th>
+              <th class="px-3 py-2">Detected</th>
+              <th class="px-3 py-2">Status change</th>
+              <th class="px-3 py-2">Subject</th>
+            </tr>
+          </thead>
+          <tbody id="gm-rows"></tbody>
+        </table>
+        <p id="gm-empty" class="text-sm text-gray-500 py-8 text-center hidden">
+          No Gmail events yet. Run <code class="bg-gray-100 px-1">node gmail-sync.mjs</code> after running setup. See <a class="underline" href="https://github.com/kxvid/career-ops/blob/claude/job-application-tracker-M3nL4/GMAIL_SETUP.md" target="_blank">GMAIL_SETUP.md</a>.
+        </p>
+      </div>
+    </section>
   </main>
+
+  <!-- Evaluate modal -->
+  <div id="ev-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto" onclick="if(event.target===this) closeEvalModal()">
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full my-8 p-6">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 class="text-xl font-semibold" id="ev-title"></h2>
+          <p class="text-sm text-gray-600" id="ev-subtitle"></p>
+        </div>
+        <button onclick="closeEvalModal()" class="text-gray-500 hover:text-gray-900 text-2xl leading-none">×</button>
+      </div>
+      <div id="ev-body"></div>
+    </div>
+  </div>
 
   <footer class="text-center text-xs text-gray-400 mt-10 mb-4">
     Career-Ops dashboard · Static build · Re-run <code class="bg-gray-100 px-1">node web/build.mjs</code> to refresh.
@@ -297,6 +594,7 @@ document.getElementById('hdr-built').textContent = new Date(D.builtAt).toLocaleS
 document.getElementById('pl-count').textContent = '(' + D.pipeline.length + ')';
 document.getElementById('ap-count').textContent = '(' + D.applications.length + ')';
 document.getElementById('rp-count').textContent = '(' + D.reports.length + ')';
+document.getElementById('gm-count').textContent = '(' + D.gmailEvents.length + ')';
 
 // -- Tabs --
 const tabs = document.querySelectorAll('.tab');
@@ -340,24 +638,49 @@ function renderOverview() {
       <div><b>Tier 3:</b> \${t3}</div>
     </div>\`;
 
-  const recent = D.pipeline.slice(0, 8);
-  document.getElementById('overview-recent').innerHTML = recent.length === 0
+  const top = [...D.pipeline].sort((a, b) => (b.fit || 0) - (a.fit || 0)).slice(0, 10);
+  document.getElementById('overview-recent').innerHTML = top.length === 0
     ? '<p class="text-sm text-gray-500">No listings yet.</p>'
-    : '<ul class="divide-y text-sm">' + recent.map(p =>
-        \`<li class="py-2 flex justify-between gap-3"><span><b>\${esc(p.company)}</b> · \${esc(p.title)}</span><a class="text-blue-600 underline shrink-0" href="\${esc(p.url)}" target="_blank">open ↗</a></li>\`
+    : '<ul class="divide-y text-sm">' + top.map(p =>
+        \`<li class="py-2 flex justify-between gap-3 items-center"><span><span class="pill \${fitColor(p.fit || 0)} mr-2">\${p.fit || 0}</span><b>\${esc(p.company)}</b> · \${esc(p.title)}</span><a class="text-blue-600 underline shrink-0" href="\${esc(p.url)}" target="_blank">open ↗</a></li>\`
       ).join('') + '</ul>';
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 
-// -- Pipeline --
+// -- Pipeline + decisions --
+const DECISIONS_KEY = 'careerops:decisions:v1';
+function loadDecisions() {
+  try { return JSON.parse(localStorage.getItem(DECISIONS_KEY) || '{}'); } catch { return {}; }
+}
+function saveDecision(url, decision) {
+  const d = loadDecisions();
+  if (decision === null) delete d[url];
+  else d[url] = { decision, ts: new Date().toISOString() };
+  localStorage.setItem(DECISIONS_KEY, JSON.stringify(d));
+}
+function fitColor(s) {
+  if (s >= 70) return 'bg-emerald-100 text-emerald-800';
+  if (s >= 50) return 'bg-blue-100 text-blue-800';
+  if (s >= 30) return 'bg-amber-100 text-amber-800';
+  return 'bg-gray-100 text-gray-600';
+}
+function decisionPill(d) {
+  const map = { interested: 'bg-emerald-50 text-emerald-700', not: 'bg-gray-100 text-gray-500 line-through', applied: 'bg-blue-50 text-blue-700', rejected: 'bg-red-50 text-red-700' };
+  const label = { interested: '👍', not: '👎', applied: '✓ applied', rejected: '✗ rejected' };
+  if (!d) return '';
+  return \`<span class="pill \${map[d] || 'pill-status'}">\${label[d] || d}</span>\`;
+}
+const NON_US_KEYS = ['London', 'Bengaluru', 'Bangalore', 'Hyderabad', 'Tokyo', 'Korea', 'Japan', 'Berlin', 'Paris', 'Amsterdam', 'Singapore', 'India', 'Canberra', 'Australia', 'Ottawa', 'Canada', 'Czech', 'Russian', 'Ukrainian', 'Nordics', 'Benelux', 'Shanghai', 'France', 'Germany', 'Mexico', 'Brazil', 'Sao Paulo', 'São Paulo'];
+
 function renderPipeline() {
   const search = document.getElementById('pl-search').value.toLowerCase();
   const co = document.getElementById('pl-company').value;
   const usOnly = document.getElementById('pl-us-only').checked;
-  const noJunior = document.getElementById('pl-no-junior').checked;
-  const nonUS = ['London', 'Bengaluru', 'Bangalore', 'Hyderabad', 'Tokyo', 'Korea', 'Japan', 'Berlin', 'Paris', 'Amsterdam', 'Singapore', 'India', 'Canberra', 'Australia', 'Ottawa', 'Canada', 'Czech', 'Russian', 'Ukrainian', 'Nordics', 'Benelux', 'Shanghai', 'France', 'Germany'];
-  const junior = /\\b(Junior|New Grad|Intern|Internship|Manager|Director|Head of|Principal|Staff)\\b/i;
+  const hideDecided = document.getElementById('pl-hide-decided').checked;
+  const minFit = +document.getElementById('pl-min-fit').value;
+  document.getElementById('pl-min-fit-val').textContent = minFit;
+  const decisions = loadDecisions();
 
   let rows = D.pipeline.filter(p => {
     if (co && p.company !== co) return false;
@@ -365,31 +688,333 @@ function renderPipeline() {
       const hay = (p.company + ' ' + p.title).toLowerCase();
       if (!hay.includes(search)) return false;
     }
-    if (usOnly && nonUS.some(k => p.title.includes(k))) return false;
-    if (noJunior && junior.test(p.title)) return false;
+    if (usOnly && NON_US_KEYS.some(k => p.title.includes(k))) return false;
+    if ((p.fit || 0) < minFit) return false;
+    if (hideDecided && decisions[p.url]) return false;
     return true;
   });
+  rows.sort((a, b) => (b.fit || 0) - (a.fit || 0));
 
-  document.getElementById('pl-summary').textContent = rows.length + ' / ' + D.pipeline.length + ' listings';
-  document.getElementById('pl-rows').innerHTML = rows.map(p => \`
-    <tr class="border-t hover:bg-gray-50">
-      <td class="px-3 py-2 font-medium">\${esc(p.company)}</td>
-      <td class="px-3 py-2">\${esc(p.title)}</td>
-      <td class="px-3 py-2 text-gray-500 text-xs">\${esc(p.first_seen || '')}</td>
-      <td class="px-3 py-2"><a class="text-blue-600 underline" href="\${esc(p.url)}" target="_blank">Open ↗</a></td>
-    </tr>\`).join('');
+  // Summary stats
+  const decided = Object.values(decisions);
+  const counts = decided.reduce((acc, d) => { acc[d.decision] = (acc[d.decision] || 0) + 1; return acc; }, {});
+  document.getElementById('pl-summary').innerHTML =
+    '<span><b>' + rows.length + '</b> / ' + D.pipeline.length + ' shown</span>' +
+    '<span>👍 ' + (counts.interested || 0) + '</span>' +
+    '<span>👎 ' + (counts.not || 0) + '</span>' +
+    '<span>✓ ' + (counts.applied || 0) + '</span>' +
+    '<span>✗ ' + (counts.rejected || 0) + '</span>';
 
-  if (rows.length === 0) {
-    document.getElementById('pl-rows').innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">No matches.</td></tr>';
+  document.getElementById('pl-rows').innerHTML = rows.length === 0
+    ? '<tr><td colspan="5" class="text-center py-8 text-gray-500">No matches at this threshold. Lower min-fit or clear filters.</td></tr>'
+    : rows.map(p => {
+        const dec = decisions[p.url]?.decision;
+        const cached = D.evalCache?.[p.url];
+        const evalBtn = cached
+          ? \`<button data-eval class="px-2 py-1 rounded text-xs bg-emerald-600 text-white hover:bg-emerald-700" title="Re-show evaluation">View (\${cached.match_score})</button>\`
+          : \`<button data-eval class="px-2 py-1 rounded text-xs bg-gray-900 text-white hover:bg-gray-700" title="Evaluate with Claude">Evaluate</button>\`;
+        return \`<tr class="border-t hover:bg-gray-50" data-url="\${esc(p.url)}" data-company="\${esc(p.company)}" data-title="\${esc(p.title)}">
+          <td class="px-3 py-2"><span class="pill \${fitColor(p.fit || 0)}">\${p.fit || 0}</span></td>
+          <td class="px-3 py-2 font-medium">\${esc(p.company)}</td>
+          <td class="px-3 py-2"><a href="\${esc(p.url)}" target="_blank" class="hover:underline">\${esc(p.title)}</a> \${decisionPill(dec)}</td>
+          <td class="px-3 py-2 text-gray-500 text-xs">\${esc(p.first_seen || '')}</td>
+          <td class="px-3 py-2">\${evalBtn}</td>
+          <td class="px-3 py-2">
+            <div class="flex gap-1 text-xs">
+              <button data-d="interested" title="Interested" class="px-2 py-1 rounded \${dec==='interested'?'bg-emerald-600 text-white':'bg-gray-100 hover:bg-emerald-100'}">👍</button>
+              <button data-d="not" title="Not interested" class="px-2 py-1 rounded \${dec==='not'?'bg-gray-700 text-white':'bg-gray-100 hover:bg-gray-200'}">👎</button>
+              <button data-d="applied" title="Applied" class="px-2 py-1 rounded \${dec==='applied'?'bg-blue-600 text-white':'bg-gray-100 hover:bg-blue-100'}">✓</button>
+              <button data-d="rejected" title="Rejected by them" class="px-2 py-1 rounded \${dec==='rejected'?'bg-red-600 text-white':'bg-gray-100 hover:bg-red-100'}">✗</button>
+            </div>
+          </td>
+        </tr>\`;
+      }).join('');
+
+  // Wire decision buttons
+  document.querySelectorAll('#pl-rows tr[data-url]').forEach(tr => {
+    tr.querySelectorAll('button[data-d]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = tr.dataset.url;
+        const d = btn.dataset.d;
+        const cur = loadDecisions()[url]?.decision;
+        saveDecision(url, cur === d ? null : d);
+        renderPipeline();
+      });
+    });
+    const evBtn = tr.querySelector('[data-eval]');
+    if (evBtn) evBtn.addEventListener('click', () => evaluateRow(tr.dataset));
+  });
+}
+
+// -- Evaluate via /api/evaluate --------------------------------------------
+const EVAL_CACHE_KEY = 'careerops:evals:v1';
+function loadEvalCache() {
+  try { return JSON.parse(localStorage.getItem(EVAL_CACHE_KEY) || '{}'); } catch { return {}; }
+}
+function saveEval(url, result) {
+  const c = loadEvalCache();
+  c[url] = { ...result, ts: new Date().toISOString() };
+  localStorage.setItem(EVAL_CACHE_KEY, JSON.stringify(c));
+  D.evalCache = c;
+}
+// Boot the cache from localStorage so cached badges render on first paint
+D.evalCache = loadEvalCache();
+
+const EV_MODAL = document.getElementById('ev-modal');
+function openEvalModal() { EV_MODAL.classList.remove('hidden'); }
+window.closeEvalModal = function() { EV_MODAL.classList.add('hidden'); };
+
+function recColor(rec) {
+  if (rec === 'apply') return 'bg-emerald-100 text-emerald-800';
+  if (rec === 'maybe') return 'bg-amber-100 text-amber-800';
+  return 'bg-gray-100 text-gray-700';
+}
+
+function renderEvalResult(target, rowData) {
+  const body = document.getElementById('ev-body');
+  const saved = !!target.savedToRepo;
+  body.innerHTML = \`
+    <div class="flex flex-wrap gap-3 items-center mb-4">
+      <span class="pill \${fitColor(target.match_score)}" style="font-size:1rem;padding:6px 14px">Score \${target.match_score}/100</span>
+      <span class="pill \${recColor(target.recommendation)}" style="font-size:0.9rem;padding:4px 10px">\${target.recommendation.toUpperCase()}</span>
+      <span class="pill pill-status">\${esc(target.archetype || '')}</span>
+      <span class="pill pill-status">Legitimacy: \${esc(target.block_g_legitimacy || '')}</span>
+    </div>
+    <p class="mb-4 text-gray-800 italic">"\${esc(target.tldr || '')}"</p>
+
+    <div class="flex flex-wrap gap-2 mb-5 pb-5 border-b">
+      <button id="ev-save" class="bg-emerald-600 text-white text-sm px-4 py-2 rounded hover:bg-emerald-700 disabled:opacity-50" \${saved ? 'disabled' : ''}>\${saved ? '✓ Saved to repo' : 'Save report to repo'}</button>
+      <button id="ev-tailor" class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700">Tailor my CV for this role</button>
+      <button id="ev-applied" class="bg-gray-900 text-white text-sm px-4 py-2 rounded hover:bg-gray-700">Mark as applied</button>
+    </div>
+    <p id="ev-action-status" class="text-sm text-gray-500 mb-4"></p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+      <div class="bg-emerald-50 border border-emerald-200 rounded p-3">
+        <div class="text-xs font-semibold text-emerald-800 uppercase mb-1">Strengths</div>
+        <ul class="text-sm space-y-1">\${(target.strengths || []).map(s => '<li>• ' + esc(s) + '</li>').join('')}</ul>
+      </div>
+      <div class="bg-red-50 border border-red-200 rounded p-3">
+        <div class="text-xs font-semibold text-red-800 uppercase mb-1">Concerns</div>
+        <ul class="text-sm space-y-1">\${(target.concerns || []).map(s => '<li>• ' + esc(s) + '</li>').join('')}</ul>
+      </div>
+    </div>
+
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block A — Role Summary</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_a_role_summary || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block B — CV Match</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_b_cv_match || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block C — Gaps & Mitigation</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_c_gaps || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block D — Interview Difficulty</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_d_interview_difficulty || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block E — Cover Letter Draft</summary><div class="markdown text-sm pl-4">\${marked.parse(target.block_e_cover_letter_draft || '')}</div></details>
+    <details class="mb-3"><summary class="cursor-pointer text-sm font-semibold py-1">Block G — Posting Legitimacy</summary><div class="markdown text-sm pl-4">\${esc(target.block_g_legitimacy_reasoning || '')}</div></details>
+
+    <div class="text-xs text-gray-500 mt-4">
+      Evaluated \${esc((target.ts || '').slice(0, 16).replace('T', ' '))} via Claude.
+      \${target.usage ? \`<span class="ml-2">tokens: in=\${target.usage.input} cache_r=\${target.usage.cache_read} out=\${target.usage.output}</span>\` : ''}
+    </div>\`;
+
+  // Wire action buttons
+  document.getElementById('ev-save').addEventListener('click', () => saveReport(target, rowData));
+  document.getElementById('ev-tailor').addEventListener('click', () => tailorCV(target, rowData));
+  document.getElementById('ev-applied').addEventListener('click', () => {
+    saveDecision(rowData.url, 'applied');
+    setActionStatus('Marked as applied. Decision saved locally — Gmail sync will track replies once configured.');
+    renderPipeline();
+  });
+}
+
+function setActionStatus(msg, isError = false) {
+  const el = document.getElementById('ev-action-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'text-sm mb-4 ' + (isError ? 'text-red-700' : 'text-gray-600');
+}
+
+async function saveReport(target, rowData) {
+  setActionStatus('Saving to GitHub…');
+  const btn = document.getElementById('ev-save');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/save-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eval: target, url: rowData.url, company: rowData.company, title: rowData.title }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    setActionStatus('✓ Committed report #' + j.num + ' and updated applications.md. Vercel will redeploy in ~30s.');
+    btn.textContent = '✓ Saved to repo';
+    target.savedToRepo = true;
+    saveEval(rowData.url, target);
+  } catch (err) {
+    setActionStatus('Save failed: ' + err.message + '. Need GITHUB_TOKEN + GITHUB_REPO env vars on Vercel — see ORCHESTRATOR.md.', true);
+    btn.disabled = false;
   }
 }
+
+async function tailorCV(target, rowData) {
+  setActionStatus('Tailoring CV (15-30s)…');
+  const btn = document.getElementById('ev-tailor');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/tailor-cv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: rowData.url, company: rowData.company, title: rowData.title,
+        archetype: target.archetype, evalResult: target,
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    setActionStatus('✓ Tailored. Notes: ' + (j.tailored?.notes || ''));
+    showTailoredCV(j, rowData);
+  } catch (err) {
+    setActionStatus('Tailor failed: ' + err.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showTailoredCV(result, rowData) {
+  const body = document.getElementById('ev-body');
+  const fileBase = 'cv-' + (rowData.company || 'role').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
+  const wrap = document.createElement('div');
+  wrap.className = 'mt-6 pt-6 border-t';
+  wrap.innerHTML = \`
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold">Tailored CV (editable)</h3>
+      <div class="flex gap-1">
+        <button id="cv-download-md" class="bg-emerald-600 text-white text-xs px-3 py-1.5 rounded hover:bg-emerald-700">Download .md</button>
+        <button id="cv-download-html" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded hover:bg-blue-700">Download .html</button>
+        <button id="cv-copy" class="bg-gray-700 text-white text-xs px-3 py-1.5 rounded hover:bg-gray-900">Copy</button>
+        <button id="cv-revert" class="bg-gray-200 text-gray-800 text-xs px-3 py-1.5 rounded hover:bg-gray-300">Revert</button>
+      </div>
+    </div>
+    <div class="bg-amber-50 border border-amber-200 rounded p-3 mb-3 text-xs text-amber-800">
+      <b>Tailoring notes:</b> \${esc(result.tailored?.notes || '')}
+      <br><b>Tip:</b> Edit the markdown on the left — the preview on the right updates live. Then export.
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" style="height:560px">
+      <textarea id="cv-edit" class="border rounded p-3 font-mono text-xs resize-none w-full" spellcheck="false"></textarea>
+      <div id="cv-preview" class="border rounded bg-white p-4 markdown text-sm overflow-y-auto"></div>
+    </div>\`;
+  body.appendChild(wrap);
+
+  const ta = document.getElementById('cv-edit');
+  const preview = document.getElementById('cv-preview');
+  const original = result.markdown;
+  ta.value = original;
+  function rerender() {
+    preview.innerHTML = marked.parse(ta.value);
+  }
+  rerender();
+  ta.addEventListener('input', rerender);
+
+  function downloadBlob(content, mime, name) {
+    const url = URL.createObjectURL(new Blob([content], { type: mime }));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  document.getElementById('cv-download-md').addEventListener('click', () => {
+    downloadBlob(ta.value, 'text/markdown', fileBase + '.md');
+  });
+  document.getElementById('cv-download-html').addEventListener('click', () => {
+    const inner = marked.parse(ta.value);
+    const html = \`<!doctype html><html><head><meta charset="utf-8"><title>\${esc(fileBase)}</title>
+<style>
+body{font-family:Georgia,'Iowan Old Style',serif;max-width:780px;margin:40px auto;padding:0 24px;color:#222;line-height:1.45}
+h1{font-size:1.9rem;margin:0 0 6px;border:0}
+h2{font-size:1.15rem;font-weight:700;margin:1.4rem 0 .4rem;border-bottom:1px solid #aaa;padding-bottom:2px;text-transform:uppercase;letter-spacing:.5px}
+h3{font-size:1rem;margin:.9rem 0 .15rem;font-weight:700}
+p{margin:.4rem 0}
+ul{margin:.3rem 0 .3rem 1.2rem;padding:0}
+li{margin-bottom:.18rem}
+em{color:#555;font-style:italic}
+a{color:#1a4fa3;text-decoration:none}
+@media print{body{margin:0;padding:0 .5in;font-size:11pt}h1{font-size:1.6rem}}
+</style></head><body>\${inner}<p style="text-align:center;color:#999;font-size:11px;margin-top:32px">Tailored \${new Date().toLocaleDateString()} · \${esc(rowData.company || '')} \${esc(rowData.title || '')}</p></body></html>\`;
+    downloadBlob(html, 'text/html', fileBase + '.html');
+    setActionStatus('Downloaded .html — open it and use your browser\\'s "Save as PDF" via Ctrl+P / Cmd+P.');
+  });
+  document.getElementById('cv-copy').addEventListener('click', async () => {
+    await navigator.clipboard.writeText(ta.value);
+    setActionStatus('Copied tailored CV markdown to clipboard.');
+  });
+  document.getElementById('cv-revert').addEventListener('click', () => {
+    if (ta.value !== original && !confirm('Revert your edits to the original tailored output?')) return;
+    ta.value = original; rerender();
+  });
+}
+
+async function evaluateRow(rowData) {
+  const { url, company, title } = rowData;
+  document.getElementById('ev-title').textContent = company + ' — ' + title;
+  document.getElementById('ev-subtitle').innerHTML = \`<a href="\${esc(url)}" target="_blank" class="text-blue-600 underline">\${esc(url)}</a>\`;
+  openEvalModal();
+
+  const cached = loadEvalCache()[url];
+  if (cached) {
+    renderEvalResult(cached, rowData);
+    return;
+  }
+
+  document.getElementById('ev-body').innerHTML = \`
+    <div class="py-8 text-center text-gray-600">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-700 mb-3"></div>
+      <p class="text-sm font-medium">Calling Claude (Opus 4.7) — fetching JD, scoring against your profile…</p>
+      <p class="text-xs text-gray-500 mt-2">Typically 15–40 seconds. First call writes cache; later calls are faster.</p>
+    </div>\`;
+
+  try {
+    const r = await fetch('/api/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, company, title }),
+    });
+    const j = await r.json();
+    if (!r.ok) {
+      let helper = '';
+      if (/ANTHROPIC_API_KEY/.test(j.error || '')) {
+        helper = '<p class="mt-3">Add <code class="bg-gray-100 px-1">ANTHROPIC_API_KEY</code> to Vercel: Project → Settings → Environment Variables. Get a key at <a class="underline" href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> ($5 free credit).</p>';
+      }
+      document.getElementById('ev-body').innerHTML =
+        \`<div class="bg-red-50 border border-red-200 rounded p-4 text-red-800 text-sm"><b>Evaluation failed.</b><p class="mt-2 font-mono text-xs">\${esc(j.error || 'unknown error')}</p>\${helper}</div>\`;
+      return;
+    }
+    saveEval(url, j);
+    renderEvalResult(j, rowData);
+    renderPipeline();
+  } catch (err) {
+    document.getElementById('ev-body').innerHTML =
+      \`<div class="bg-red-50 border border-red-200 rounded p-4 text-red-800 text-sm"><b>Network error.</b><p class="mt-2 font-mono text-xs">\${esc(err.message || String(err))}</p><p class="mt-2 text-xs">If you opened the dashboard locally (file:// or :3000), the API call has nowhere to go. Open the deployed Vercel URL.</p></div>\`;
+  }
+}
+
 function setupPipelineFilters() {
   const companies = [...new Set(D.pipeline.map(p => p.company))].sort();
   const sel = document.getElementById('pl-company');
   sel.innerHTML = '<option value="">All companies</option>' + companies.map(c => \`<option>\${esc(c)}</option>\`).join('');
-  ['pl-search', 'pl-company', 'pl-us-only', 'pl-no-junior'].forEach(id =>
+  ['pl-search', 'pl-company', 'pl-us-only', 'pl-hide-decided', 'pl-min-fit'].forEach(id =>
     document.getElementById(id).addEventListener('input', renderPipeline)
   );
+  document.getElementById('pl-export').addEventListener('click', exportFeedback);
+}
+
+function exportFeedback() {
+  const decisions = loadDecisions();
+  const rows = [['decision', 'ts', 'fit', 'company', 'title', 'url'].join('\\t')];
+  for (const p of D.pipeline) {
+    const d = decisions[p.url];
+    if (!d) continue;
+    rows.push([d.decision, d.ts, p.fit || 0, p.company, p.title, p.url].join('\\t'));
+  }
+  const blob = new Blob([rows.join('\\n') + '\\n'], { type: 'text/tab-separated-values' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'feedback.tsv';
+  a.click();
 }
 
 // -- Applications --
@@ -439,6 +1064,180 @@ if (D.reports.length === 0) {
     \`<li class="py-2 flex justify-between"><span class="font-mono text-sm">\${esc(r.name)}</span><a class="text-blue-600 underline" href="../\${esc(r.path)}" target="_blank">view ↗</a></li>\`
   ).join('');
 }
+
+// -- Gmail state + events --
+function renderGmail() {
+  const stateEl = document.getElementById('gm-state');
+  if (!D.gmailState) {
+    stateEl.innerHTML = '<p class="text-sm text-gray-600">No sync run yet. After OAuth setup, run <code class="bg-gray-100 px-1">node gmail-sync.mjs --dry-run</code>. See <a class="underline" href="https://github.com/kxvid/career-ops/blob/claude/job-application-tracker-M3nL4/GMAIL_SETUP.md" target="_blank">GMAIL_SETUP.md</a>.</p>';
+  } else {
+    const s = D.gmailState;
+    const last = s.last_run ? new Date(s.last_run).toLocaleString() : '—';
+    stateEl.innerHTML = \`
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div><div class="text-xs text-gray-500 uppercase">Last sync</div><div class="font-medium">\${esc(last)}</div></div>
+        <div><div class="text-xs text-gray-500 uppercase">Window</div><div class="font-medium">\${esc(s.last_query_date || '—')}</div></div>
+        <div><div class="text-xs text-gray-500 uppercase">Processed</div><div class="font-medium">\${s.processed ?? 0}</div></div>
+        <div><div class="text-xs text-gray-500 uppercase">Updated</div><div class="font-medium">\${s.updated ?? 0}\${s.dry_run ? ' (dry-run)' : ''}</div></div>
+      </div>\`;
+  }
+  if (D.gmailEvents.length === 0) {
+    document.getElementById('gm-empty').classList.remove('hidden');
+  } else {
+    document.getElementById('gm-rows').innerHTML = D.gmailEvents.map(e => {
+      const change = e.old_status && e.new_status && e.old_status !== e.new_status
+        ? \`<span class="text-gray-500">\${esc(e.old_status)}</span> → <b>\${esc(e.new_status)}</b>\`
+        : \`<span class="text-gray-500">\${esc(e.action || '—')}</span>\`;
+      return \`<tr class="border-t hover:bg-gray-50">
+        <td class="px-3 py-2 text-xs text-gray-500">\${esc((e.ts || '').replace('T', ' ').slice(0, 16))}</td>
+        <td class="px-3 py-2">\${esc(e.company || '—')}</td>
+        <td class="px-3 py-2"><span class="pill pill-status">\${esc(e.detected || '—')}</span></td>
+        <td class="px-3 py-2">\${change}</td>
+        <td class="px-3 py-2 text-gray-600 truncate max-w-[400px]">\${esc(e.subject || '')}</td>
+      </tr>\`;
+    }).join('');
+  }
+}
+renderGmail();
+
+// -- Status Log tab --
+const STATUS_LOG_KEY = 'careerops:statuslog:v1';
+function loadStatusLog() {
+  try { return JSON.parse(localStorage.getItem(STATUS_LOG_KEY) || '[]'); } catch { return []; }
+}
+function saveStatusLog(arr) {
+  localStorage.setItem(STATUS_LOG_KEY, JSON.stringify(arr));
+}
+
+function buildLogEvents() {
+  const out = [];
+  // Manual entries from localStorage
+  for (const e of loadStatusLog()) {
+    out.push({ ts: e.ts, source: 'manual', status: e.status, app: e.app, note: e.note || '' });
+  }
+  // Decisions from localStorage (👍👎✓✗ on pipeline rows)
+  const decisions = loadDecisions();
+  for (const [url, d] of Object.entries(decisions)) {
+    const p = D.pipeline.find(x => x.url === url);
+    out.push({
+      ts: d.ts, source: 'decision', status: d.decision,
+      app: p ? \`\${p.company} — \${p.title}\` : url,
+      note: '',
+    });
+  }
+  // Evaluations from localStorage
+  for (const [url, ev] of Object.entries(D.evalCache || {})) {
+    const p = D.pipeline.find(x => x.url === url);
+    out.push({
+      ts: ev.ts, source: 'evaluation',
+      status: 'Evaluated (' + (ev.match_score || 0) + ')',
+      app: p ? \`\${p.company} — \${p.title}\` : url,
+      note: ev.tldr || '',
+    });
+  }
+  // Gmail sync events
+  for (const e of D.gmailEvents || []) {
+    if (!e.detected || e.action === 'no-match') continue;
+    out.push({
+      ts: e.ts, source: 'gmail',
+      status: e.new_status || e.detected,
+      app: e.company ? \`\${e.company}\${e.role ? ' — ' + e.role : ''}\` : '(unmatched)',
+      note: e.subject || '',
+    });
+  }
+  // Applications.md current status snapshot
+  for (const a of D.applications || []) {
+    out.push({
+      ts: a.date + 'T00:00:00Z', source: 'tracker',
+      status: a.status,
+      app: \`#\${a.num} \${a.company} — \${a.role}\`,
+      note: a.notes || '',
+    });
+  }
+  out.sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+  return out;
+}
+
+function renderStatusLog() {
+  const events = buildLogEvents();
+  const search = (document.getElementById('lg-search')?.value || '').toLowerCase();
+  const source = document.getElementById('lg-source')?.value || '';
+  const filtered = events.filter(e => {
+    if (source && e.source !== source) return false;
+    if (search && !((e.app + ' ' + e.note + ' ' + e.status).toLowerCase().includes(search))) return false;
+    return true;
+  });
+  document.getElementById('lg-count').textContent = '(' + events.length + ')';
+  const empty = document.getElementById('lg-empty');
+  const tbody = document.getElementById('lg-rows');
+  if (filtered.length === 0) {
+    empty.classList.remove('hidden');
+    tbody.innerHTML = '';
+    return;
+  }
+  empty.classList.add('hidden');
+  const colorBySource = {
+    manual: 'bg-purple-100 text-purple-800',
+    gmail: 'bg-amber-100 text-amber-800',
+    decision: 'bg-blue-100 text-blue-800',
+    evaluation: 'bg-emerald-100 text-emerald-800',
+    tracker: 'bg-gray-100 text-gray-700',
+  };
+  tbody.innerHTML = filtered.map(e => \`
+    <tr class="border-t hover:bg-gray-50">
+      <td class="px-3 py-2 text-xs text-gray-500">\${esc((e.ts || '').replace('T', ' ').slice(0, 16))}</td>
+      <td class="px-3 py-2"><span class="pill \${colorBySource[e.source] || 'pill-status'}">\${esc(e.source)}</span></td>
+      <td class="px-3 py-2"><span class="pill pill-status">\${esc(e.status || '')}</span></td>
+      <td class="px-3 py-2 font-medium">\${esc(e.app)}</td>
+      <td class="px-3 py-2 text-gray-600">\${esc(e.note)}</td>
+    </tr>\`).join('');
+}
+
+function setupStatusLogForm() {
+  const sel = document.getElementById('lg-app');
+  const apps = [];
+  // Pull options from applications + interested-pipeline rows
+  for (const a of D.applications || []) {
+    apps.push({ value: a.company + ' — ' + a.role, label: \`#\${a.num} \${a.company} — \${a.role}\` });
+  }
+  const decisions = loadDecisions();
+  for (const url of Object.keys(decisions)) {
+    const p = D.pipeline.find(x => x.url === url);
+    if (!p) continue;
+    apps.push({ value: p.company + ' — ' + p.title, label: p.company + ' — ' + p.title });
+  }
+  const seen = new Set();
+  const opts = apps.filter(a => { if (seen.has(a.value)) return false; seen.add(a.value); return true; });
+  sel.innerHTML = '<option value="">— pick application —</option>' + opts.map(o => \`<option value="\${esc(o.value)}">\${esc(o.label)}</option>\`).join('');
+
+  document.getElementById('lg-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const app = sel.value;
+    const status = document.getElementById('lg-status').value;
+    const note = document.getElementById('lg-note').value;
+    if (!app) { alert('Pick an application first.'); return; }
+    const log = loadStatusLog();
+    log.push({ ts: new Date().toISOString(), app, status, note });
+    saveStatusLog(log);
+    document.getElementById('lg-note').value = '';
+    renderStatusLog();
+  });
+
+  ['lg-search', 'lg-source'].forEach(id => document.getElementById(id).addEventListener('input', renderStatusLog));
+  document.getElementById('lg-export').addEventListener('click', () => {
+    const events = buildLogEvents();
+    const tsv = ['ts\\tsource\\tstatus\\tapplication\\tnote'].concat(
+      events.map(e => [e.ts, e.source, e.status, e.app, (e.note || '').replace(/\\t/g, ' ')].join('\\t'))
+    ).join('\\n');
+    const url = URL.createObjectURL(new Blob([tsv + '\\n'], { type: 'text/tab-separated-values' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'status-log.tsv'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+}
+
+setupStatusLogForm();
+renderStatusLog();
 
 // Initial render
 renderOverview();

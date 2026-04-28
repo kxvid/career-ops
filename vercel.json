@@ -4,5 +4,18 @@
   "outputDirectory": "web",
   "framework": null,
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "functions": {
+    "api/evaluate.mjs": {
+      "maxDuration": 60,
+      "includeFiles": "{cv.md,config/profile.yml,modes/_profile.md}"
+    },
+    "api/tailor-cv.mjs": {
+      "maxDuration": 60,
+      "includeFiles": "{cv.md,config/profile.yml,modes/_profile.md}"
+    },
+    "api/save-report.mjs": {
+      "maxDuration": 30
+    }
+  }
 }

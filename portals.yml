@@ -92,14 +92,32 @@ title_filter:
     # Roles outside his current capabilities
     - "Machine Learning Engineer"
     - "ML Engineer"
+    - "ML Researcher"
     - "Deep Learning"
     - "NLP Engineer"
     - "Research Scientist"
+    - "Research Engineer"
     - "Applied Scientist"
     - "Data Scientist"
+    - "Quantitative"
+    - "Quant"
+    # Too senior (he's mid-level, graduated June 2024)
+    - "Engineering Manager"
+    - "Manager,"
+    - "Manager of"
+    - "Director,"
+    - "Director of"
+    - "Head of"
+    - "VP "
+    - "VP,"
+    - "Vice President"
+    - "Distinguished"
+    - "Fellow Engineer"
     # Junior / unpaid / sales
     - "Intern"
     - "Internship"
+    - "New Grad"
+    - "New-Grad"
     - "Sales Development"
     - "SDR"
     - "BDR"
@@ -115,15 +133,55 @@ title_filter:
     - "Service Desk"
     - "Desktop Support"
     - "Tech Support"
-    # Non-target geos (catch obvious EU/Asia-only postings -- liveness check confirms)
+    # Language-specific regional roles
+    - "Russian Speaker"
+    - "Russian Speaking"
+    - "Korean Speaking"
+    - "Mandarin Speaking"
+    - "Cantonese"
+    - "Japanese Speaking"
+    - "Czech Speaking"
+    - "Polish Speaking"
+    - "Ukrainian Speaker"
+    - "Ukrainian Speaking"
+    - "Portuguese Speaking"
+    - "Italian Speaking"
+    - "Spanish Speaking"
+    - "Dutch Speaking"
+    - "German Speaking"
+    - "French Speaking"
+    # Non-target geos (catch obvious EU/Asia/LatAm-only postings -- liveness check confirms)
     - "Bangalore"
+    - "Bengaluru"
     - "Hyderabad"
+    - "Pune"
+    - "Mumbai"
+    - "Delhi"
+    - "Chennai"
     - "London"
     - "Berlin"
+    - "Munich"
     - "Paris"
+    - "Lisbon"
     - "Amsterdam"
+    - "Brussels"
     - "Singapore"
     - "Tokyo"
+    - "Seoul"
+    - "Sydney"
+    - "Melbourne"
+    - "Canberra"
+    - "Tel Aviv"
+    - "Dublin"
+    - "Madrid"
+    - "Barcelona"
+    - "Mexico City"
+    - "São Paulo"
+    - "Sao Paulo"
+    - "Buenos Aires"
+    - "Toronto"
+    - "Montreal"
+    - "Vancouver"
   seniority_boost:
     - "Mid"
     - "Senior"
@@ -532,4 +590,179 @@ tracked_companies:
     scan_method: websearch
     scan_query: 'site:careers.chevron.com ("IT Systems" OR "Security" OR "Cloud")'
     notes: "Houston, TX HQ + San Ramon, CA."
+    enabled: true
+
+  # -- Cybersecurity pure-plays (diversifies away from AI labs) --
+
+  - name: Abnormal Security
+    careers_url: https://job-boards.greenhouse.io/abnormalsecurity
+    api: https://boards-api.greenhouse.io/v1/boards/abnormalsecurity/jobs
+    notes: "SF + remote. Email security."
+    enabled: true
+
+  - name: HackerOne
+    careers_url: https://job-boards.greenhouse.io/hackerone
+    api: https://boards-api.greenhouse.io/v1/boards/hackerone/jobs
+    notes: "Remote-first. Bug bounty platform."
+    enabled: true
+
+  - name: Rapid7
+    careers_url: https://job-boards.greenhouse.io/rapid7
+    api: https://boards-api.greenhouse.io/v1/boards/rapid7/jobs
+    notes: "Boston + remote. VM + SIEM."
+    enabled: true
+
+  - name: Dragos
+    careers_url: https://job-boards.greenhouse.io/dragos
+    api: https://boards-api.greenhouse.io/v1/boards/dragos/jobs
+    notes: "Hanover, MD + remote. ICS/OT cybersecurity -- adjacent to your SCADA work."
+    enabled: true
+
+  - name: Tines
+    careers_url: https://jobs.ashbyhq.com/tines
+    notes: "Dublin + remote US. Security automation/SOAR. Heavy SE/FDE hiring."
+    enabled: true
+
+  # -- Cloud / dev infra (mid-market, strong IT/sec teams) --
+
+  - name: MongoDB
+    careers_url: https://job-boards.greenhouse.io/mongodb
+    api: https://boards-api.greenhouse.io/v1/boards/mongodb/jobs
+    notes: "NYC HQ + Austin + remote."
+    enabled: true
+
+  - name: DigitalOcean
+    careers_url: https://job-boards.greenhouse.io/digitalocean
+    api: https://boards-api.greenhouse.io/v1/boards/digitalocean/jobs
+    notes: "NYC + remote-first."
+    enabled: true
+
+  - name: PlanetScale
+    careers_url: https://jobs.ashbyhq.com/planetscale
+    notes: "Remote-first US. Database infra."
+    enabled: true
+
+  - name: Render
+    careers_url: https://jobs.ashbyhq.com/render
+    notes: "SF + remote. PaaS."
+    enabled: true
+
+  - name: Discord
+    careers_url: https://job-boards.greenhouse.io/discord
+    api: https://boards-api.greenhouse.io/v1/boards/discord/jobs
+    notes: "SF + remote."
+    enabled: true
+
+  - name: Reddit
+    careers_url: https://job-boards.greenhouse.io/reddit
+    api: https://boards-api.greenhouse.io/v1/boards/reddit/jobs
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  - name: Dropbox
+    careers_url: https://job-boards.greenhouse.io/dropbox
+    api: https://boards-api.greenhouse.io/v1/boards/dropbox/jobs
+    notes: "Virtual-first US."
+    enabled: true
+
+  - name: Pinterest
+    careers_url: https://job-boards.greenhouse.io/pinterest
+    api: https://boards-api.greenhouse.io/v1/boards/pinterest/jobs
+    notes: "SF + remote."
+    enabled: true
+
+  - name: Airbnb
+    careers_url: https://job-boards.greenhouse.io/airbnb
+    api: https://boards-api.greenhouse.io/v1/boards/airbnb/jobs
+    notes: "Live & Work Anywhere (US-remote)."
+    enabled: true
+
+  - name: DoorDash
+    careers_url: https://job-boards.greenhouse.io/doordash
+    api: https://boards-api.greenhouse.io/v1/boards/doordash/jobs
+    notes: "SF + Seattle + NYC + remote."
+    enabled: true
+
+  - name: Lyft
+    careers_url: https://job-boards.greenhouse.io/lyft
+    api: https://boards-api.greenhouse.io/v1/boards/lyft/jobs
+    notes: "SF + NYC + Nashville."
+    enabled: true
+
+  # -- Fintech (strong IT/sec/compliance teams; SOC2/PCI/SOX overlap with your CMMC) --
+
+  - name: Plaid
+    careers_url: https://job-boards.greenhouse.io/plaid
+    api: https://boards-api.greenhouse.io/v1/boards/plaid/jobs
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  - name: Brex
+    careers_url: https://job-boards.greenhouse.io/brex
+    api: https://boards-api.greenhouse.io/v1/boards/brex/jobs
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  - name: Mercury
+    careers_url: https://job-boards.greenhouse.io/mercury
+    api: https://boards-api.greenhouse.io/v1/boards/mercury/jobs
+    notes: "SF + NYC + remote-first."
+    enabled: true
+
+  - name: Carta
+    careers_url: https://job-boards.greenhouse.io/carta
+    api: https://boards-api.greenhouse.io/v1/boards/carta/jobs
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  - name: Robinhood
+    careers_url: https://job-boards.greenhouse.io/robinhoodcareers
+    api: https://boards-api.greenhouse.io/v1/boards/robinhoodcareers/jobs
+    notes: "Menlo Park, CA + remote."
+    enabled: true
+
+  # -- SaaS / productivity (mid-market, strong IT) --
+
+  - name: Asana
+    careers_url: https://job-boards.greenhouse.io/asana
+    api: https://boards-api.greenhouse.io/v1/boards/asana/jobs
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  - name: Notion
+    careers_url: https://jobs.ashbyhq.com/notion
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  - name: Figma
+    careers_url: https://jobs.ashbyhq.com/figma
+    notes: "SF + NYC + remote."
+    enabled: true
+
+  # -- Defense adjacencies (small-to-mid, fast-growing) --
+
+  - name: Saildrone
+    careers_url: https://job-boards.greenhouse.io/saildrone
+    api: https://boards-api.greenhouse.io/v1/boards/saildrone/jobs
+    notes: "Alameda, CA. Maritime intel/defense."
+    enabled: true
+
+  - name: Hadrian
+    careers_url: https://job-boards.greenhouse.io/hadrian
+    api: https://boards-api.greenhouse.io/v1/boards/hadrian/jobs
+    notes: "Hawthorne, CA. Aerospace manufacturing for defense."
+    enabled: true
+
+  # -- Healthcare tech (HIPAA = compliance fit) --
+
+  - name: Oscar Health
+    careers_url: https://job-boards.greenhouse.io/oscarhealth
+    api: https://boards-api.greenhouse.io/v1/boards/oscarhealth/jobs
+    notes: "NYC HQ + remote."
+    enabled: true
+
+  - name: Hims & Hers
+    careers_url: https://job-boards.greenhouse.io/hims
+    api: https://boards-api.greenhouse.io/v1/boards/hims/jobs
+    notes: "SF + remote."
     enabled: true
